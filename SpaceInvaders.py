@@ -115,8 +115,6 @@ class Sprite:
         self.y = ocy - self.height / 2
         assert self.center() == other_centerable.center(), "Teleportation failed"
 
-class Collidable:
-
     def collide_with_point(self, px, py):
         return self.x <= px and px <= self.x + self.width and self.y <= py and py <= self.y + self.height
 
@@ -161,7 +159,7 @@ class Star(Sprite):
                           randrange(2, 4),                   # speed
                           star_animation)
 
-class Invader(Sprite, Collidable):
+class Invader(Sprite):
 
     def __init__ (self):
         invader_animation = Animation(0,                         # img
@@ -177,7 +175,7 @@ class Invader(Sprite, Collidable):
                           invader_animation)
 
 
-class Shot(Sprite, Collidable):
+class Shot(Sprite):
 
     def __init__ (self, rocket):
         shot_animation = Animation(0,                          # img
@@ -244,7 +242,7 @@ class Life(Sprite):
     def is_dead(self):
         return self.life == 0
 
-class Rocket(Sprite, Collidable):
+class Rocket(Sprite):
 
     def __init__(self):
         self.normal_speed = Animation(0,         # img
