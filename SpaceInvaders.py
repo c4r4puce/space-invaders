@@ -73,56 +73,31 @@ class Animation:
                   self.framex, self.framey, # (x, y) source
                   self.width, self.height,  # (largeur, hauteur) source et destination
                   0)                        # couleur transparente
-    
-class Drawable:
 
-    def __init__(self, depth, x, y, width, height, img, framex, framey, speed):
-        self.depth  = depth
-        self.x      = x
-        self.y      = y
-        self.width  = width
-        self.height = height
-        self.img    = img
-        self.speed  = speed
-
-    def update_frame(self):
-        pass
-
-    def update(self):
-        self.update_frame()
-        self.y += self.speed # Update position   
-
-    def draw(self):
-        raise NotImplementedError()
-        pyxel.blt(self.x, self.y,                                      # (x, y) destination
-                  self.img,                                            # numero image source
-                  self.framex * self.width, self.framey * self.height, # (x, y) source
-                  self.width, self.height,                             # (largeur, hauteur) source et destination
-                  0)                                                   # couleur transparente
-
-    def is_visible(self):
-        return self.y < pyxel.height
-
-class Animable(Drawable):
+class Sprite:
 
     def __init__(self, depth, x, y, speed, animation):
-        Drawable.__init__(self,
-                          depth,
-                          x, y,
-                          animation.width, animation.height,
-                          animation.img,
-                          animation.origx, animation.origy,
-                          speed)
+        self.depth     = depth
+        self.x         = x
+        self.y         = y
+        self.width     = animation.width
+        self.height    = animation.height
+        self.img       = animation.img
+        self.speed     = speed
         self.animation = animation
-
-    def update(self):
-        Drawable.update(self)
 
     def update_frame(self):
         self.animation.next_frame()
 
+    def update(self):
+        self.update_frame()
+        self.y += self.speed # Update position
+
     def draw(self):
         self.animation.draw_at(self.x, self.y)
+
+    def is_visible(self):
+        return self.y < pyxel.height
 
     def is_done(self):
         return not self.animation.running
@@ -173,7 +148,7 @@ class Collidable:
         pyxel.line(self.x, self.y, obj.x, obj.y, col)
         pyxel.rectb(obj.x, obj.y, obj.width, obj.height, col)        
    
-class Star(Animable):
+class Star(Sprite):
 
     def __init__(self):        
         star_animation = Animation(1,                        # img
@@ -182,13 +157,13 @@ class Star(Animable):
                                    1,                        # count
                                    direction=TOP_TO_BOTTOM,
                                    fps=10)
-        Animable.__init__(self,
+        Sprite.__init__(self,
                           0,                                 # depth
                           randrange(0, pyxel.width-8), -8,   # x, y
                           randrange(2, 4),                   # speed
                           star_animation)
     
-class Invader(Animable, Collidable):
+class Invader(Sprite, Collidable):
 
     def __init__ (self):
         invader_animation = Animation(0,                         # img
@@ -197,14 +172,14 @@ class Invader(Animable, Collidable):
                                      8,                          # count
                                      direction=TOP_TO_BOTTOM,
                                      fps=6 )
-        Animable.__init__(self,
+        Sprite.__init__(self,
                           1,                                     # depth
                           randrange(0, pyxel.width-16), -16,     # x, y
                           1,                                     # speed
                           invader_animation)
 
 
-class Shot(Animable, Collidable, Centerable):
+class Shot(Sprite, Collidable, Centerable):
 
     def __init__ (self, rocket):
         shot_animation = Animation(0,                          # img
@@ -212,13 +187,13 @@ class Shot(Animable, Collidable, Centerable):
                                    0, 112,                     # origx, origy
                                    1,                          # count
                                    direction=TOP_TO_BOTTOM)
-        Animable.__init__(self,
+        Sprite.__init__(self,
                           1,                                     # depth
                           rocket.x + rocket.x/2, rocket.y,       # x, y
                           3,                                     # speed
                           shot_animation)
  
-class InvaderExplosion(Animable):
+class InvaderExplosion(Sprite):
 
     def __init__(self, invader):
         invader_explosion_animation = Animation(0,                      # img
@@ -226,20 +201,20 @@ class InvaderExplosion(Animable):
                                                0, randrange(3, 6) * 16, # origx, origy
                                                10,                      # count
                                                loop=False)              # 
-        Animable.__init__(self,
+        Sprite.__init__(self,
                           1,                                             # depth
                           invader.x, invader.y,                          # x, y
                           invader.speed,                                 # speed
                           invader_explosion_animation)
     
-class Life(Animable):
+class Life(Sprite):
 
     def __init__(self):
         life_animation = Animation(1,           # img
                                    32, 16,      # width, height
                                    0, 0,        # origx, origy
                                    6)           # count
-        Animable.__init__(self,
+        Sprite.__init__(self,
                           3,                    # depth
                           0, 0, # x, y
                           0,                    # speed
@@ -247,7 +222,7 @@ class Life(Animable):
         self.life   = 18
 
     def draw(self):
-        Animable.draw(self)
+        Sprite.draw(self)
 
         x = self.x + 8
         y = self.y + 6
@@ -271,7 +246,7 @@ class Life(Animable):
     def is_dead(self):
         return self.life == 0
 
-class Rocket(Animable, Centerable, Collidable):
+class Rocket(Sprite, Centerable, Collidable):
 
     def __init__(self):
         self.normal_speed = Animation(0,         # img
@@ -286,7 +261,7 @@ class Rocket(Animable, Centerable, Collidable):
                                       16, 16,    # width, height
                                       0, 32,     # origx, origy
                                       4)         # count
-        Animable.__init__(self,
+        Sprite.__init__(self,
                           2,                                           # depth
                           (pyxel.width / 2) - 8, pyxel.height - 16,    # x, y
                           0,                                           # speed
@@ -307,7 +282,7 @@ class Rocket(Animable, Centerable, Collidable):
         else:
             self.animation = self.normal_speed
         
-        Animable.update(self)
+        Sprite.update(self)
 
 class Root:
     
