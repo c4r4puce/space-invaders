@@ -102,14 +102,12 @@ class Sprite:
     def is_done(self):
         return not self.animation.running
 
-class Centerable:
-
     def center(self):
         cx = self.x + self.width / 2
         cy = self.y + self.height / 2
         return (cx, cy)
 
-    # Modifie (self.x, self.y) pour que:
+    # Modify (self.x, self.y) to get:
     #     self.center() == other_centerable.center()
     def teleport(self, other_centerable):
         (ocx, ocy) = other_centerable.center()
@@ -179,7 +177,7 @@ class Invader(Sprite, Collidable):
                           invader_animation)
 
 
-class Shot(Sprite, Collidable, Centerable):
+class Shot(Sprite, Collidable):
 
     def __init__ (self, rocket):
         shot_animation = Animation(0,                          # img
@@ -246,7 +244,7 @@ class Life(Sprite):
     def is_dead(self):
         return self.life == 0
 
-class Rocket(Sprite, Centerable, Collidable):
+class Rocket(Sprite, Collidable):
 
     def __init__(self):
         self.normal_speed = Animation(0,         # img
