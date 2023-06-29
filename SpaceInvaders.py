@@ -11,7 +11,8 @@ DEBUG_COLLISION      = False
 LEFT_TO_RIGHT = 0
 TOP_TO_BOTTOM = 1
 
-root = None
+rocket = None
+root   = None
 
 class Animation:
 
@@ -246,6 +247,12 @@ class Life(Sprite):
 
 class Rocket(Sprite):
 
+    def singleton():
+        global rocket
+        if rocket is None:
+            rocket = Rocket()
+        return rocket
+
     def __init__(self):
         self.normal_speed = Animation(0,         # img
                                       16, 16,    # width, height
@@ -265,6 +272,7 @@ class Rocket(Sprite):
                           0,                                           # speed
                           self.normal_speed)
         self.rocket_speed = 1.5
+        self.destroyed    = False
 
     def update(self):
         if pyxel.btn(pyxel.KEY_LEFT):
@@ -282,6 +290,10 @@ class Rocket(Sprite):
 
         Sprite.update(self)
 
+    def destroy(self):
+        Root.singleton().remove_sprite(self)
+        self.destroyed = True
+
 class Root:
 
     def singleton():
@@ -297,7 +309,6 @@ class Root:
 
         self.stars              = []
         self.invaders           = []
-        self.rocket             = Rocket()
         self.shots              = []
         self.life               = Life()
         self.invader_explosions = []
@@ -311,7 +322,7 @@ class Root:
         #
         # FIXME Find a better name for this tree of sprites.
         self.sprites = [[], [], [], []]
-        self.add_sprite(self.rocket)
+        self.add_sprite( Rocket.singleton() )
         self.add_sprite(self.life)
 
         self.debug_objects = []
@@ -325,12 +336,8 @@ class Root:
     def remove_sprite(self, sprite):
         self.sprites[sprite.depth].remove(sprite)
 
-    def remove_rocket(self):
-        self.remove_sprite(self.rocket)
-        self.rocket = None
-
     def rocket_destroyed_by_invader(self, invader):
-        self.remove_rocket()
+        Rocket.singleton().destroy()
         self.add_invader_explosion( InvaderExplosion(invader) )
 
     def add_star(self, star):
@@ -363,7 +370,7 @@ class Root:
                 self.remove_shot(shot)
                 continue
 
-            if self.rocket is not None and shot.collide_with(self.invader):
+            if not Rocket.singleton().destroyed and shot.collide_with(self.invader):
                     self.remove_shot(shot)
                     self.add_invader_explosion(InvaderExplosion(invader))
 
@@ -392,8 +399,8 @@ class Root:
             if not invader.is_visible():
                 self.remove_invader(invader)
                 continue
-
-            if self.rocket is not None and invader.collide_with(self.rocket):
+            rocket = Rocket.singleton()
+            if not rocket.destroyed and invader.collide_with(rocket):
                     self.remove_invader(invader)
                     self.life.dec()
                     self.add_invader_explosion(InvaderExplosion(invader))
@@ -436,12 +443,12 @@ class Root:
             return
 
     def debug_draw_collision_data(self, collidables):
-        if self.rocket is None:
+        if Rocket.singleton().destroyed:
             return
 
         col = 0
         for c in collidables:
-            c.debug_draw_collision_data(self.rocket, 2+col)
+            c.debug_draw_collision_data(Rocket.singleton(), 2+col)
             col += 1
 
     def draw_game_over(self):
