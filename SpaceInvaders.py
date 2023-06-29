@@ -11,6 +11,8 @@ DEBUG_COLLISION      = False
 LEFT_TO_RIGHT = 0
 TOP_TO_BOTTOM = 1
 
+root = None
+
 class Animation:
 
     def __init__(self, img, width, height, origx, origy, count, loop=True, direction=LEFT_TO_RIGHT, fps=5):
@@ -282,6 +284,12 @@ class Rocket(Sprite):
 
 class Root:
 
+    def singleton():
+        global root
+        if root is None:
+            root = Root()
+        return root
+
     def __init__(self):
         self.fps = 30
         pyxel.init(160, 120, fps=self.fps)
@@ -467,13 +475,10 @@ class Root:
                 color += 1
 
 def main():
-    global root
-    root = Root()
-    root.run()
+    Root.singleton().run()
 
 def pause():
-    global root
-    root.paused = True
+    Root.singleton().paused = True
 
 if __name__ == "__main__":
     main()
