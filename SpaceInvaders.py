@@ -15,7 +15,7 @@ class Animation:
 
     def __init__(self, img, width, height, origx, origy, count, loop=True, direction=LEFT_TO_RIGHT, fps=5):
         assert count >= 1, "Frame count must be greater than or equal to 1"
-                
+
         # Config:
         self.img       = img
         self.width     = width
@@ -42,14 +42,14 @@ class Animation:
     def restart(self):
         self.frame   = 0
         self.running = True
-    
+
     def next_frame(self):
         if not self.running:
             return
-        
+
         if pyxel.frame_count % self.fps != 0:
             return
-        
+
         self.frame += 1
         if self.frame == self.count:
             if self.loop:
@@ -66,7 +66,7 @@ class Animation:
             self.framex += self.width
         else: # self.direction == TOP_TO_BOTTOM
             self.framey += self.height
-        
+
     def draw_at(self, x, y):
         pyxel.blt(x, y,                     # (x, y) destination
                   self.img,                 # numero image source
@@ -107,7 +107,7 @@ class Centerable:
     def center(self):
         cx = self.x + self.width / 2
         cy = self.y + self.height / 2
-        return (cx, cy)  
+        return (cx, cy)
 
     # Modifie (self.x, self.y) pour que:
     #     self.center() == other_centerable.center()
@@ -124,13 +124,13 @@ class Collidable:
 
     def collide_with_rect_1(self, rx, ry, rwidth, rheight):
         return self.collide_with_point(rx, ry)
-    
+
     def collide_with_rect_2(self, rx, ry, rwidth, rheight):
         return self.collide_with_point(rx + rwidth, ry)
-    
+
     def collide_with_rect_3(self, rx, ry, rwidth, rheight):
         return self.collide_with_point(rx, ry + rheight)
-    
+
     def collide_with_rect_4(self, rx, ry, rwidth, rheight):
         return self.collide_with_point(rx + rwidth, ry + rheight)
 
@@ -139,18 +139,18 @@ class Collidable:
             or self.collide_with_rect_2(rx, ry, rwidth, rheight) \
             or self.collide_with_rect_3(rx, ry, rwidth, rheight) \
             or self.collide_with_rect_4(rx, ry, rwidth, rheight)
-    
+
     def collide_with(self, oc):
         return self.collide_with_rect(oc.x, oc.y, oc.width, oc.height)
 
     def debug_draw_collision_data(self, obj, col):
         pyxel.rectb(self.x, self.y, self.width, self.height, col)
         pyxel.line(self.x, self.y, obj.x, obj.y, col)
-        pyxel.rectb(obj.x, obj.y, obj.width, obj.height, col)        
-   
+        pyxel.rectb(obj.x, obj.y, obj.width, obj.height, col)
+
 class Star(Sprite):
 
-    def __init__(self):        
+    def __init__(self):
         star_animation = Animation(1,                        # img
                                    8, 8,                     # width, height
                                    randrange(0, 9) * 8, 16,  # origx, origy
@@ -162,7 +162,7 @@ class Star(Sprite):
                           randrange(0, pyxel.width-8), -8,   # x, y
                           randrange(2, 4),                   # speed
                           star_animation)
-    
+
 class Invader(Sprite, Collidable):
 
     def __init__ (self):
@@ -192,7 +192,7 @@ class Shot(Sprite, Collidable, Centerable):
                           rocket.x + rocket.x/2, rocket.y,       # x, y
                           3,                                     # speed
                           shot_animation)
- 
+
 class InvaderExplosion(Sprite):
 
     def __init__(self, invader):
@@ -200,13 +200,13 @@ class InvaderExplosion(Sprite):
                                                16, 16,                  # width, height
                                                0, randrange(3, 6) * 16, # origx, origy
                                                10,                      # count
-                                               loop=False)              # 
+                                               loop=False)
         Sprite.__init__(self,
                           1,                                             # depth
                           invader.x, invader.y,                          # x, y
                           invader.speed,                                 # speed
                           invader_explosion_animation)
-    
+
 class Life(Sprite):
 
     def __init__(self):
@@ -232,8 +232,8 @@ class Life(Sprite):
         pyxel.rect(x, y, w, h, color)
         pyxel.rect(x+1, y+1, w-2, h-2, 8)
         pyxel.rect(self.x+5, self.y+3, 3, 1, 7)
-        pyxel.rect(self.x+9, self.y+3, 1, 1, 7)        
-        
+        pyxel.rect(self.x+9, self.y+3, 1, 1, 7)
+
     def dec(self):
         self.life = max(0, self.life - 2)
 
@@ -281,11 +281,11 @@ class Rocket(Sprite, Centerable, Collidable):
             pass
         else:
             self.animation = self.normal_speed
-        
+
         Sprite.update(self)
 
 class Root:
-    
+
     def __init__(self):
         self.fps = 30
         pyxel.init(160, 120, fps=self.fps)
@@ -312,7 +312,7 @@ class Root:
 
         self.debug_objects = []
 
-    def run(self):        
+    def run(self):
         pyxel.run(self.update, self.draw)
 
     def add_drawable(self, drawable):
@@ -323,12 +323,12 @@ class Root:
 
     def remove_rocket(self):
         self.remove_drawable(self.rocket)
-        self.rocket = None     
+        self.rocket = None
 
     def rocket_destroyed_by_invader(self, invader):
         self.remove_rocket()
         self.add_invader_explosion( InvaderExplosion(invader) )
-            
+
     def add_star(self, star):
         self.add_drawable(star)
         self.stars.append(star)
@@ -358,7 +358,7 @@ class Root:
             if not shot.is_visible():
                 self.remove_shot(shot)
                 continue
-            
+
             if self.rocket is not None and shot.collide_with(self.invader):
                     self.remove_shot(shot)
                     self.add_invader_explosion(InvaderExplosion(invader))
@@ -388,7 +388,7 @@ class Root:
             if not invader.is_visible():
                 self.remove_invader(invader)
                 continue
-            
+
             if self.rocket is not None and invader.collide_with(self.rocket):
                     self.remove_invader(invader)
                     self.life.dec()
@@ -410,17 +410,17 @@ class Root:
     def update(self):
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
-            
+
         if pyxel.btnp(pyxel.KEY_SPACE):
             self.paused = not self.paused
-        
+
         if pyxel.btnp(pyxel.KEY_F1):
             global DEBUG_COLLISION
             DEBUG_COLLISION = not DEBUG_COLLISION
 
         if self.paused:
             return
-            
+
         for depth in range(0, len(self.drawables)):
             drawables = self.drawables[depth]
             for drawable in drawables:
@@ -430,11 +430,11 @@ class Root:
         self.update_invaders()
         if self.is_game_over():
             return
-                
+
     def debug_draw_collision_data(self, collidables):
         if self.rocket is None:
             return
-                
+
         col = 0
         for c in collidables:
             c.debug_draw_collision_data(self.rocket, 2+col)
@@ -449,7 +449,7 @@ class Root:
             f = pyxel.frame_count % self.fps
             if (f // 8) % 2 == 0:
                 pyxel.text(1, 1, "PAUSED", 7)
-            
+
     def draw(self):
         pyxel.cls(0)
         for drawables in self.drawables:
@@ -478,7 +478,6 @@ def main():
 def pause():
     global root
     root.paused = True
-        
+
 if __name__ == "__main__":
     main()
-    
