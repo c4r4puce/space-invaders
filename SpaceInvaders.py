@@ -236,9 +236,9 @@ class Life(Animable):
 
     def __init__(self):
         life_animation = Animation(1,           # img
-                                   32, 16,      # width, height
+                                   40, 16,      # width, height
                                    0, 0,        # origx, origy
-                                   6)           # count
+                                   1)           # count
         Animable.__init__(self,
                           3,                    # depth
                           0, 0, # x, y
@@ -249,15 +249,15 @@ class Life(Animable):
     def draw(self):
         Animable.draw(self)
 
-        x = self.x + 8
-        y = self.y + 6
+        x = self.x + 14
+        y = self.y + 2
         w = self.life
         h = 4
         color = 2
         pyxel.rect(x, y, w, h, color)
         pyxel.rect(x+1, y+1, w-2, h-2, 8)
-        pyxel.rect(self.x+10, self.y+7, 3, 1, 7)
-        pyxel.rect(self.x+14, self.y+7, 1, 1, 7)        
+        pyxel.rect(self.x+17, self.y+3, 3, 1, 7)
+        pyxel.rect(self.x+21, self.y+3, 1, 1, 7)        
         
     def dec(self):
         self.life = max(0, self.life - 2)
