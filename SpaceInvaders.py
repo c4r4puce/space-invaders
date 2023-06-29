@@ -224,15 +224,15 @@ class Life(Sprite):
     def draw(self):
         Sprite.draw(self)
 
-        x = self.x + 14
+        x = self.x + 2
         y = self.y + 2
         w = self.life
         h = 4
         color = 2
         pyxel.rect(x, y, w, h, color)
         pyxel.rect(x+1, y+1, w-2, h-2, 8)
-        pyxel.rect(self.x+17, self.y+3, 3, 1, 7)
-        pyxel.rect(self.x+21, self.y+3, 1, 1, 7)        
+        pyxel.rect(self.x+5, self.y+3, 3, 1, 7)
+        pyxel.rect(self.x+9, self.y+3, 1, 1, 7)        
         
     def dec(self):
         self.life = max(0, self.life - 2)
