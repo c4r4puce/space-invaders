@@ -299,30 +299,30 @@ class Root:
         self.invader_explosions = []
         self.paused             = False
 
-        # Drawables sorted by depth:
+        # Sprites sorted by depth:
         # [0] Stars
         # [1] Blackholes, planets, planet explosions
         # [2] Rocket, implosion
         # [3] HUD
         #
-        # FIXME Find a better name for this tree of drawables.
-        self.drawables = [[], [], [], []]
-        self.add_drawable(self.rocket)
-        self.add_drawable(self.life)
+        # FIXME Find a better name for this tree of sprites.
+        self.sprites = [[], [], [], []]
+        self.add_sprite(self.rocket)
+        self.add_sprite(self.life)
 
         self.debug_objects = []
 
     def run(self):
         pyxel.run(self.update, self.draw)
 
-    def add_drawable(self, drawable):
-        self.drawables[drawable.depth].append(drawable)
+    def add_sprite(self, sprite):
+        self.sprites[sprite.depth].append(sprite)
 
-    def remove_drawable(self, drawable):
-        self.drawables[drawable.depth].remove(drawable)
+    def remove_sprite(self, sprite):
+        self.sprites[sprite.depth].remove(sprite)
 
     def remove_rocket(self):
-        self.remove_drawable(self.rocket)
+        self.remove_sprite(self.rocket)
         self.rocket = None
 
     def rocket_destroyed_by_invader(self, invader):
@@ -330,11 +330,11 @@ class Root:
         self.add_invader_explosion( InvaderExplosion(invader) )
 
     def add_star(self, star):
-        self.add_drawable(star)
+        self.add_sprite(star)
         self.stars.append(star)
 
     def remove_star(self, star):
-        self.remove_drawable(star)
+        self.remove_sprite(star)
         self.stars.remove(star)
 
     def update_stars(self):
@@ -346,11 +346,11 @@ class Root:
             self.add_star(star)
 
     def add_shot(self, shot):
-        self.add_drawable(shot)
+        self.add_sprite(shot)
         self.shots.append(shot)
 
     def remove_shot(self, shot):
-        self.remove_drawable(shot)
+        self.remove_sprite(shot)
         self.shots.remove(shot)
 
     def update_shots(self):
@@ -368,19 +368,19 @@ class Root:
                 self.remove_invader_explosion(invader_explosion)
 
     def add_invader(self, invader):
-        self.add_drawable(invader)
+        self.add_sprite(invader)
         self.invaders.append(invader)
 
     def remove_invader(self, invader):
-        self.remove_drawable(invader)
+        self.remove_sprite(invader)
         self.invaders.remove(invader)
 
     def add_invader_explosion(self, invader_explosion):
-        self.add_drawable(invader_explosion)
+        self.add_sprite(invader_explosion)
         self.invader_explosions.append(invader_explosion)
 
     def remove_invader_explosion(self, invader_explosion):
-        self.remove_drawable(invader_explosion)
+        self.remove_sprite(invader_explosion)
         self.invader_explosions.remove(invader_explosion)
 
     def update_invaders(self):
@@ -421,10 +421,10 @@ class Root:
         if self.paused:
             return
 
-        for depth in range(0, len(self.drawables)):
-            drawables = self.drawables[depth]
-            for drawable in drawables:
-                drawable.update()
+        for depth in range(0, len(self.sprites)):
+            sprites = self.sprites[depth]
+            for sprite in sprites:
+                sprite.update()
         self.update_shots()
         self.update_stars()
         self.update_invaders()
@@ -452,9 +452,9 @@ class Root:
 
     def draw(self):
         pyxel.cls(0)
-        for drawables in self.drawables:
-            for drawable in drawables:
-                drawable.draw()
+        for sprites in self.sprites:
+            for sprite in sprites:
+                sprite.draw()
 
         if DEBUG_COLLISION:
             for cl in [self.invaders]:
