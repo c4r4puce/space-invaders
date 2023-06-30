@@ -177,7 +177,7 @@ class Invader(Sprite):
                           1,                                     # speed
                           invader_animation)
 
-class UFO(Sprite, Collidable):
+class UFO(Sprite):
     
     def __init__ (self):
         UFO_animation = Animation(1,                          # img
@@ -212,8 +212,7 @@ class InvaderExplosion(Sprite):
                                                16, 16,                  # width, height
                                                0, randrange(3, 7)*16,   # origx, origy
                                                10,                      # count
-                                               loop=False,
-                                               fps = 3) 
+                                               loop=False) 
         Sprite.__init__(self,
                           1,                                             # depth
                           invader.x, invader.y,                          # x, y
@@ -317,6 +316,10 @@ class Root:
         return root
 
     def __init__(self):
+        global root
+        if root is not None:
+            raise AssertionError("singleton pattern violation")
+        
         self.fps = 30
         pyxel.init(160, 120, fps=self.fps)
         pyxel.load("space-invaders.pyxres")
