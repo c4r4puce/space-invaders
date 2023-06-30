@@ -11,8 +11,10 @@ DEBUG_COLLISION      = False
 LEFT_TO_RIGHT = 0
 TOP_TO_BOTTOM = 1
 
-rocket = None
-root   = None
+# Singletons:
+life_bar = None
+rocket   = None
+root     = None
 
 class Animation:
 
@@ -226,26 +228,32 @@ class InvaderExplosion(Sprite):
                           invader.speed,                                 # speed
                           invader_explosion_animation)
 
-class Life(Sprite):
+class LifeBar(Sprite):
+
+    def singleton():
+        global life_bar
+        if life_bar is None:
+            life_bar = LifeBar()
+        return life_bar
 
     def __init__(self):
-        life_animation = Animation(1,           # img
-                                   40, 16,      # width, height
-                                   0, 0,        # origx, origy
-                                   1)           # count
+        animation = Animation(1,           # img
+                              40, 16,      # width, height
+                              0, 0,        # origx, origy
+                              1)           # count
         Sprite.__init__(self,
-                          3,                    # depth
-                          0, 0, # x, y
-                          0,                    # speed
-                          life_animation)
-        self.life   = 18
+                          3,               # depth
+                          0, 0,            # x, y
+                          0,               # speed
+                          animation)
+        self.hit_points = 18
 
     def draw(self):
         Sprite.draw(self)
 
         x = self.x + 2
         y = self.y + 2
-        w = self.life
+        w = self.hit_points
         h = 4
         color = 2
         pyxel.rect(x, y, w, h, color)
@@ -254,16 +262,16 @@ class Life(Sprite):
         pyxel.rect(self.x+9, self.y+3, 1, 1, 7)
 
     def dec(self):
-        self.life = max(0, self.life - 2)
+        self.hit_points = max(0, self.hit_points - 2)
 
     def inc(self):
-        self.life = min(18, self.life + 2)
+        self.hit_points = min(18, self.hit_points + 2)
 
     def die_immediatly(self):
-        self.life = 0
+        self.hit_points = 0
 
     def is_dead(self):
-        return self.life == 0
+        return self.hit_points == 0
 
 class Rocket(Sprite):
 
@@ -326,7 +334,6 @@ class Root:
         self.invaders           = []
         self.ufos               = []
         self.shots              = []
-        self.life               = Life()
         self.invader_explosions = []
         self.paused             = False
 
@@ -339,7 +346,7 @@ class Root:
         # FIXME Find a better name for this tree of sprites.
         self.sprites = [[], [], [], []]
         self.add_sprite( Rocket.singleton() )
-        self.add_sprite(self.life)
+        self.add_sprite( LifeBar.singleton() )
 
         self.debug_objects = []
 
@@ -412,9 +419,9 @@ class Root:
                 continue
             if invader.collide_with(rocket):
                 invader.destroy()
-                self.life.dec()
+                LifeBar.singleton().dec()
                 self.add_invader_explosion(InvaderExplosion(invader))
-                if self.life.is_dead():
+                if LifeBar.singleton().is_dead():
                     self.rocket_destroyed_by_invader(invader)
 
         if pyxel.frame_count % 60 == 0:
@@ -426,7 +433,7 @@ class Root:
                 self.remove_invader_explosion(invader_explosion)
 
     def is_game_over(self):
-        return self.life.is_dead()
+        return LifeBar.singleton().is_dead()
 
     def update(self):
         if pyxel.btnp(pyxel.KEY_Q):
