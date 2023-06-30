@@ -317,6 +317,24 @@ class Rocket(Sprite):
 
         Sprite.update(self)
 
+class SpriteGenerator:
+
+    def __init__(self):
+        self.frequencies = {}
+
+    def add(self, sprite_class, freq):
+        if freq in self.frequencies:
+            self.frequencies[freq].append(sprite_class)
+        else:
+            self.frequencies[freq] = [sprite_class]
+
+    def generate(self):
+        for freq, sprite_classes in self.frequencies.items():
+            if pyxel.frame_count % freq != 0:
+                continue
+            for sprite_class in sprite_classes:
+                Root.singleton().add_sprite( sprite_class() )
+
 class Root:
 
     def singleton():
@@ -330,12 +348,14 @@ class Root:
         pyxel.init(160, 120, fps=self.fps)
         pyxel.load("space-invaders.pyxres")
 
-        self.stars              = []
         self.invaders           = []
         self.ufos               = []
         self.shots              = []
         self.invader_explosions = []
         self.paused             = False
+
+        self.generator = SpriteGenerator()
+        self.generator.add(Star, 1)
 
         # Sprites sorted by depth:
         # [0] Stars
@@ -362,15 +382,6 @@ class Root:
     def rocket_destroyed_by_invader(self, invader):
         Rocket.singleton().destroy()
         self.add_invader_explosion( InvaderExplosion(invader) )
-
-    def add_star(self, star):
-        self.add_sprite(star)
-        self.stars.append(star)
-
-    def update_stars(self):
-        if pyxel.frame_count % 1 == 0:
-            star = Star()
-            self.add_star(star)
 
     def add_shot(self, shot):
         self.add_sprite(shot)
@@ -459,8 +470,10 @@ class Root:
                     sprite.destroy()
 
         self.update_shots()
-        self.update_stars()
         self.update_invaders()
+
+        self.generator.generate()
+
         if self.is_game_over():
             return
 
