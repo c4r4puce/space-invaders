@@ -80,14 +80,15 @@ class Animation:
 class Sprite:
 
     def __init__(self, depth, x, y, speed, animation):
+        self.animation = animation
         self.depth     = depth
-        self.x         = x
-        self.y         = y
-        self.width     = animation.width
+        self.destroyed = False
         self.height    = animation.height
         self.img       = animation.img
         self.speed     = speed
-        self.animation = animation
+        self.width     = animation.width
+        self.x         = x
+        self.y         = y
 
     def update_frame(self):
         self.animation.next_frame()
@@ -146,6 +147,11 @@ class Sprite:
         pyxel.rectb(self.x, self.y, self.width, self.height, col)
         pyxel.line(self.x, self.y, obj.x, obj.y, col)
         pyxel.rectb(obj.x, obj.y, obj.width, obj.height, col)
+
+    def destroy(self):
+        if not self.destroyed:
+            Root.singleton().remove_sprite(self)
+            self.destroyed = True
 
 class Star(Sprite):
 
@@ -286,7 +292,6 @@ class Rocket(Sprite):
                           0,                                           # speed
                           self.normal_speed)
         self.rocket_speed = 1.5
-        self.destroyed    = False
 
     def update(self):
         if pyxel.btn(pyxel.KEY_LEFT):
@@ -303,10 +308,6 @@ class Rocket(Sprite):
             self.animation = self.normal_speed
 
         Sprite.update(self)
-
-    def destroy(self):
-        Root.singleton().remove_sprite(self)
-        self.destroyed = True
 
 class Root:
 
@@ -359,14 +360,7 @@ class Root:
         self.add_sprite(star)
         self.stars.append(star)
 
-    def remove_star(self, star):
-        self.remove_sprite(star)
-        self.stars.remove(star)
-
     def update_stars(self):
-        for star in self.stars:
-            if not star.is_visible():
-                self.remove_star(star)
         if pyxel.frame_count % 1 == 0:
             star = Star()
             self.add_star(star)
@@ -381,10 +375,6 @@ class Root:
 
     def update_shots(self):
         for shot in self.shots:
-            if not shot.is_visible():
-                self.remove_shot(shot)
-                continue
-
             if not Rocket.singleton().destroyed and shot.collide_with(self.invader):
                     self.remove_shot(shot)
                     self.add_invader_explosion(InvaderExplosion(invader))
@@ -396,10 +386,6 @@ class Root:
     def add_invader(self, invader):
         self.add_sprite(invader)
         self.invaders.append(invader)
-
-    def remove_invader(self, invader):
-        self.remove_sprite(invader)
-        self.invaders.remove(invader)
 
     def add_ufo(self, ufo):
         self.add_drawable(ufo)
@@ -418,17 +404,18 @@ class Root:
         self.invader_explosions.remove(invader_explosion)
 
     def update_invaders(self):
+        rocket = Rocket.singleton()
+        if rocket.destroyed:
+            return
         for invader in self.invaders:
-            if not invader.is_visible():
-                self.remove_invader(invader)
+            if invader.destroyed:
                 continue
-            rocket = Rocket.singleton()
-            if not rocket.destroyed and invader.collide_with(rocket):
-                    self.remove_invader(invader)
-                    self.life.dec()
-                    self.add_invader_explosion(InvaderExplosion(invader))
-                    if self.life.is_dead():
-                        self.rocket_destroyed_by_invader(invader)
+            if invader.collide_with(rocket):
+                invader.destroy()
+                self.life.dec()
+                self.add_invader_explosion(InvaderExplosion(invader))
+                if self.life.is_dead():
+                    self.rocket_destroyed_by_invader(invader)
 
         if pyxel.frame_count % 60 == 0:
             invader = Invader()
@@ -459,6 +446,11 @@ class Root:
             sprites = self.sprites[depth]
             for sprite in sprites:
                 sprite.update()
+
+                # Destroy the sprite once it leave the screen.
+                if not sprite.is_visible():
+                    sprite.destroy()
+
         self.update_shots()
         self.update_stars()
         self.update_invaders()
