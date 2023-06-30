@@ -185,8 +185,42 @@ class Invader(Sprite):
                           1,                                     # speed
                           invader_animation)
 
+    def explode(self):
+        if self.destroyed:
+            return
+        self.destroy()
+        Root.singleton().add_sprite( InvaderExplosion(self) )
+
+    def update(self):
+        Sprite.update(self)
+
+        if self.destroyed:
+            return
+
+        rocket = Rocket.singleton()
+        if self.collide_with(rocket):
+            self.explode()
+            LifeBar.singleton().dec()
+            if LifeBar.singleton().is_dead():
+                rocket.destroy()
+
+class InvaderExplosion(Sprite):
+
+    def __init__(self, invader):
+        animation = Animation(0,                       # img
+                              16, 16,                  # width, height
+                              0, randrange(3, 7)*16,   # origx, origy
+                              10,                      # count
+                              loop=False,
+                              fps = 3)
+        Sprite.__init__(self,
+                        1,                             # depth
+                        invader.x, invader.y,          # x, y
+                        invader.speed,                 # speed
+                        animation)
+
 class UFO(Sprite):
-    
+
     def __init__ (self):
         UFO_animation = Animation(1,                          # img
                                   16, 16,                     # width, height
@@ -212,21 +246,6 @@ class Shot(Sprite):
                           rocket.x + rocket.x/2, rocket.y,       # x, y
                           3,                                     # speed
                           shot_animation)
-
-class InvaderExplosion(Sprite):
-
-    def __init__(self, invader):
-        invader_explosion_animation = Animation(0,                      # img
-                                               16, 16,                  # width, height
-                                               0, randrange(3, 7)*16,   # origx, origy
-                                               10,                      # count
-                                               loop=False,
-                                               fps = 3) 
-        Sprite.__init__(self,
-                          1,                                             # depth
-                          invader.x, invader.y,                          # x, y
-                          invader.speed,                                 # speed
-                          invader_explosion_animation)
 
 class LifeBar(Sprite):
 
@@ -284,13 +303,13 @@ class Rocket(Sprite):
     def __init__(self):
         self.normal_speed = Animation(0,         # img
                                       16, 16,    # width, height
-                                      0, 0,     # origx, origy
+                                      0, 0,      # origx, origy
                                       4)         # count
-        self.left_speed = Animation(0,         # img
+        self.left_speed = Animation(0,           # img
                                       16, 16,    # width, height
                                       0, 16,     # origx, origy
                                       4)         # count
-        self.right_speed = Animation(0,         # img
+        self.right_speed = Animation(0,          # img
                                       16, 16,    # width, height
                                       0, 32,     # origx, origy
                                       4)         # count
@@ -348,14 +367,13 @@ class Root:
         pyxel.init(160, 120, fps=self.fps)
         pyxel.load("space-invaders.pyxres")
 
-        self.invaders           = []
-        self.ufos               = []
-        self.shots              = []
-        self.invader_explosions = []
-        self.paused             = False
+        self.ufos   = []
+        self.shots  = []
+        self.paused = False
 
         self.generator = SpriteGenerator()
-        self.generator.add(Star, 1)
+        self.generator.add(Invader, 60)
+        self.generator.add(Star,    1)
 
         # Sprites sorted by depth:
         # [0] Stars
@@ -379,10 +397,6 @@ class Root:
     def remove_sprite(self, sprite):
         self.sprites[sprite.depth].remove(sprite)
 
-    def rocket_destroyed_by_invader(self, invader):
-        Rocket.singleton().destroy()
-        self.add_invader_explosion( InvaderExplosion(invader) )
-
     def add_shot(self, shot):
         self.add_sprite(shot)
         self.shots.append(shot)
@@ -395,15 +409,7 @@ class Root:
         for shot in self.shots:
             if not Rocket.singleton().destroyed and shot.collide_with(self.invader):
                     self.remove_shot(shot)
-                    self.add_invader_explosion(InvaderExplosion(invader))
-
-        for invader_explosion in self.invader_explosions:
-            if invader_explosion.is_done():
-                self.remove_invader_explosion(invader_explosion)
-
-    def add_invader(self, invader):
-        self.add_sprite(invader)
-        self.invaders.append(invader)
+                    invader.explode()
 
     def add_ufo(self, ufo):
         self.add_drawable(ufo)
@@ -412,36 +418,6 @@ class Root:
     def remove_ufo(self, ufo):
         self.remove_drawable(ufo)
         self.ufos.remove(ufo)
-
-    def add_invader_explosion(self, invader_explosion):
-        self.add_sprite(invader_explosion)
-        self.invader_explosions.append(invader_explosion)
-
-    def remove_invader_explosion(self, invader_explosion):
-        self.remove_sprite(invader_explosion)
-        self.invader_explosions.remove(invader_explosion)
-
-    def update_invaders(self):
-        rocket = Rocket.singleton()
-        if rocket.destroyed:
-            return
-        for invader in self.invaders:
-            if invader.destroyed:
-                continue
-            if invader.collide_with(rocket):
-                invader.destroy()
-                LifeBar.singleton().dec()
-                self.add_invader_explosion(InvaderExplosion(invader))
-                if LifeBar.singleton().is_dead():
-                    self.rocket_destroyed_by_invader(invader)
-
-        if pyxel.frame_count % 60 == 0:
-            invader = Invader()
-            self.add_invader(invader)
-
-        for invader_explosion in self.invader_explosions:
-            if invader_explosion.is_done():
-                self.remove_invader_explosion(invader_explosion)
 
     def is_game_over(self):
         return LifeBar.singleton().is_dead()
@@ -465,12 +441,13 @@ class Root:
             for sprite in sprites:
                 sprite.update()
 
-                # Destroy the sprite once it leave the screen.
-                if not sprite.is_visible():
+                # Destroy the sprite if:
+                # - it left the screen
+                # - or it's animation is done.
+                if not sprite.is_visible() or sprite.is_done():
                     sprite.destroy()
 
         self.update_shots()
-        self.update_invaders()
 
         self.generator.generate()
 
