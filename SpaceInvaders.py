@@ -178,7 +178,24 @@ class Invader(Sprite, Collidable):
                           1,                                     # speed
                           invader_animation)
 
+class UFO(Sprite, Collidable):
+    
+    def __init__ (self):
+        UFO_animation = Animation(1,                          # img
+                                  16, 16,                     # width, height
+                                  0, 24,                      # origx, origy
+                                  7,                          # count
+                                  fps=6 )
+        Sprite.__init__(self,
+                          1,                                     # depth
+                          -16, 50,                               # x, y
+                          3,                                     # speed
+                          UFO_animation)
 
+
+
+    
+        
 class Shot(Sprite, Collidable, Centerable):
 
     def __init__ (self, rocket):
@@ -198,9 +215,10 @@ class InvaderExplosion(Sprite):
     def __init__(self, invader):
         invader_explosion_animation = Animation(0,                      # img
                                                16, 16,                  # width, height
-                                               0, randrange(3, 6) * 16, # origx, origy
+                                               0, randrange(3, 7)*16,   # origx, origy
                                                10,                      # count
-                                               loop=False)              # 
+                                               loop=False,
+                                                fps = 3)                 # 
         Sprite.__init__(self,
                           1,                                             # depth
                           invader.x, invader.y,                          # x, y
@@ -293,6 +311,7 @@ class Root:
 
         self.stars              = []
         self.invaders           = []
+        self.ufos               = []
         self.rocket             = Rocket()
         self.shots              = []
         self.life               = Life()
@@ -374,6 +393,14 @@ class Root:
     def remove_invader(self, invader):
         self.remove_drawable(invader)
         self.invaders.remove(invader)
+
+    def add_ufo(self, ufo):
+        self.add_drawable(ufo)
+        self.ufos.append(ufo)
+
+    def remove_ufo(self, ufo):
+        self.remove_drawable(ufo)
+        self.ufos.remove(ufo)
 
     def add_invader_explosion(self, invader_explosion):
         self.add_drawable(invader_explosion)
