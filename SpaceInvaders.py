@@ -185,7 +185,7 @@ class Invader(Sprite):
                           1,                                     # speed
                           invader_animation)
 
-class UFO(Sprite, Collidable):
+class UFO(Sprite):
     
     def __init__ (self):
         UFO_animation = Animation(1,                          # img
