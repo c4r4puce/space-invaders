@@ -218,7 +218,6 @@ class InvaderExplosion(Sprite):
                         invader.speed,                 # speed
                         animation)
 
-
 class UFO(Sprite):
 
     def __init__ (self):
@@ -318,6 +317,10 @@ class Rocket(Sprite):
         return rocket
 
     def __init__(self):
+        global rocket
+        if rocket is not None:
+            raise AssertionError("singleton pattern violation")
+
         self.normal_speed = Animation(0,         # img
                                       16, 16,    # width, height
                                       0, 0,      # origx, origy
@@ -395,7 +398,7 @@ class Root:
         global root
         if root is not None:
             raise AssertionError("singleton pattern violation")
-        
+
         self.fps = 30
         pyxel.init(160, 120, fps=self.fps)
         pyxel.load("space-invaders.pyxres")
