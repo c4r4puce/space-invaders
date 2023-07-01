@@ -4,9 +4,6 @@
 import pyxel
 from random import randrange
 
-# Debug Parameters:
-DEBUG_COLLISION      = False
-
 # Animation Directions:
 LEFT_TO_RIGHT = 0
 TOP_TO_BOTTOM = 1
@@ -145,10 +142,8 @@ class Sprite:
     def collide_with(self, oc):
         return self.collide_with_rect(oc.x, oc.y, oc.width, oc.height)
 
-    def debug_draw_collision_data(self, obj, col):
-        pyxel.rectb(self.x, self.y, self.width, self.height, col)
-        pyxel.line(self.x, self.y, obj.x, obj.y, col)
-        pyxel.rectb(obj.x, obj.y, obj.width, obj.height, col)
+    def debug_draw_collision_data(self):
+        pass
 
     def destroy(self):
         if not self.destroyed:
@@ -204,6 +199,9 @@ class Invader(Sprite):
             LifeBar.singleton().dec()
             if LifeBar.singleton().is_dead():
                 rocket.destroy()
+
+    def debug_draw_collision_data(self):
+        pyxel.rectb(self.x, self.y, self.width, self.height, 7)
 
 class InvaderExplosion(Sprite):
 
@@ -306,6 +304,10 @@ class RocketProjectile(Sprite):
             if self.collide_with(invader):
                 self.destroy()
                 invader.explode()
+
+    def debug_draw_collision_data(self):
+        pyxel.rectb(self.x, self.y, self.width, self.height, 9)
+
 class Rocket(Sprite):
 
     def singleton():
@@ -358,6 +360,10 @@ class Rocket(Sprite):
 
     def shoot(self):
         Root.singleton().add_sprite( RocketProjectile() )
+
+    def debug_draw_collision_data(self):
+        pyxel.rectb(self.x, self.y, self.width, self.height, 6)
+
 class SpriteGenerator:
 
     def __init__(self):
@@ -409,6 +415,8 @@ class Root:
         self.add_sprite( Rocket.singleton() )
         self.add_sprite( LifeBar.singleton() )
 
+        self.debug_mode = False
+
     def run(self):
         pyxel.run(self.update, self.draw)
 
@@ -452,8 +460,19 @@ class Root:
             self.paused = not self.paused
 
         if pyxel.btnp(pyxel.KEY_F1):
-            global DEBUG_COLLISION
-            DEBUG_COLLISION = not DEBUG_COLLISION
+            self.debug_mode = not self.debug_mode
+            if self.debug_mode:
+                print("Debug Mode: enabled.")
+            else:
+                print("Debug Mode: disabled.")
+
+        if self.debug_mode:
+            print(f"Sprite Plans:")
+            for depth in range( len(self.sprite_plans) ):
+                print(f"    [{depth}] {len(self.sprite_plans[depth])}")
+            print(f"Sprite Classes:")
+            for cls, sprites in self.sprite_classes.items():
+                print(f"    {cls}: {len(sprites)}")
 
         if self.paused:
             return
@@ -473,15 +492,6 @@ class Root:
         if self.is_game_over():
             return
 
-    def debug_draw_collision_data(self, collidables):
-        if Rocket.singleton().destroyed:
-            return
-
-        col = 0
-        for c in collidables:
-            c.debug_draw_collision_data(Rocket.singleton(), 2+col)
-            col += 1
-
     def draw_game_over(self):
         if self.is_game_over():
             pyxel.text(pyxel.width / 2 - 15, pyxel.height / 2, "GAME OVER", 7)
@@ -498,19 +508,13 @@ class Root:
             for sprite in sprites:
                 sprite.draw()
 
-        if DEBUG_COLLISION:
-            for cl in [self.invaders]:
-                self.debug_draw_collision_data(cl)
+        if self.debug_mode:
+            for depth in range(0, len(self.sprite_plans)):
+                for sprite in self.sprite_plans[depth]:
+                    sprite.debug_draw_collision_data()
 
         self.draw_game_over()
         self.draw_paused()
-
-        f = pyxel.frame_count % self.fps
-        if (f // 8) % 2 == 0:
-            color = 1
-            for o in self.debug_objects:
-                pyxel.rectb(o.x, o.y, o.width, o.height, color)
-                color += 1
 
 def main():
     Root.singleton().run()
