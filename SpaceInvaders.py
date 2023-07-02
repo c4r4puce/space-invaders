@@ -309,6 +309,20 @@ class RocketProjectile(Sprite):
     def debug_draw_collision_data(self):
         pyxel.rectb(self.x, self.y, self.width, self.height, 9)
 
+class RocketWeapon:
+
+    def __init__(self, cooldown):
+        self.cooldown = cooldown
+        self.can_fire = True
+
+    # FIXME Not Implemented
+    def update(self):
+        pass
+
+    # FIXME Not completly implemented
+    def fire(self):
+        Root.singleton().add_sprite( RocketProjectile() )
+
 class Rocket(Sprite):
 
     def singleton():
@@ -341,15 +355,20 @@ class Rocket(Sprite):
                           self.normal_speed)
         self.rocket_speed = 1.5
 
+        self.weapon = RocketWeapon(10)
+
     def update(self):
         if pyxel.btn(pyxel.KEY_LEFT):
             self.left()
         elif pyxel.btn(pyxel.KEY_RIGHT):
             self.right()
-        elif pyxel.btn(pyxel.KEY_UP):
-            self.shoot()
         else:
             self.animation = self.normal_speed
+
+        if pyxel.btn(pyxel.KEY_UP):
+            self.shoot()
+
+        self.weapon.update()
 
         Sprite.update(self)
 
@@ -364,7 +383,7 @@ class Rocket(Sprite):
             self.animation = self.right_speed
 
     def shoot(self):
-        Root.singleton().add_sprite( RocketProjectile() )
+        self.weapon.fire()
 
     def debug_draw_collision_data(self):
         pyxel.rectb(self.x, self.y, self.width, self.height, 6)
