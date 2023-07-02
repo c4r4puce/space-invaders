@@ -16,7 +16,9 @@ sprite_manager = None
 
 class Animation:
 
-    def __init__(self, img, width, height, origx, origy, count, loop=True, direction=LEFT_TO_RIGHT, fps=5):
+    def __init__(self,
+                 img, width, height, origx, origy, count,
+                 loop=True, direction=LEFT_TO_RIGHT, fps=5):
         assert count >= 1, "Frame count must be greater than or equal to 1"
 
         # Config:
@@ -70,7 +72,9 @@ class Animation:
         else: # self.direction == TOP_TO_BOTTOM
             self.framey += self.height
 
-    def draw_at(self, x, y):
+    # Draw at the given top left corner.
+    def draw_at(self, tlc):
+        (x, y) = tlc
         pyxel.blt(x, y,                     # (x, y) destination
                   self.img,                 # numero image source
                   self.framex, self.framey, # (x, y) source
@@ -90,6 +94,15 @@ class Sprite:
         self.x         = x
         self.y         = y
 
+    # Center's coordinates.
+    def pos(self):
+        return (self.x, self.y)
+
+    # Top left corner's coordinates.
+    def tlc(self):
+        return (self.x - self.width  / 2,
+                self.y - self.height / 2)
+
     def update_frame(self):
         self.animation.next_frame()
 
@@ -98,7 +111,7 @@ class Sprite:
         self.y += self.speed # Update position
 
     def draw(self):
-        self.animation.draw_at(self.x, self.y)
+        self.animation.draw_at( self.tlc() )
 
     def is_visible(self):
         return self.y < pyxel.height and self.y + self.height >= 0
@@ -106,42 +119,34 @@ class Sprite:
     def is_done(self):
         return not self.animation.running
 
-    def center(self):
-        cx = self.x + self.width / 2
-        cy = self.y + self.height / 2
-        return (cx, cy)
+    def collide_with_point(self, p):
+        (px, py) = p
+        (x, y)   = self.tlc()
+        return x <= px and px <= x + self.width and y <= py and py <= y + self.height
 
-    # Modify (self.x, self.y) to get:
-    #     self.center() == other_centerable.center()
-    def teleport(self, other_centerable):
-        (ocx, ocy) = other_centerable.center()
-        self.x = ocx - self.width  / 2
-        self.y = ocy - self.height / 2
-        assert self.center() == other_centerable.center(), "Teleportation failed"
+    def collide_with_rect_1(self, tlc, width, height):
+        return self.collide_with_point(tlc)
 
-    def collide_with_point(self, px, py):
-        return self.x <= px and px <= self.x + self.width and self.y <= py and py <= self.y + self.height
+    def collide_with_rect_2(self, tlc, width, height):
+        (x, y) = tlc
+        return self.collide_with_point((x + width, y))
 
-    def collide_with_rect_1(self, rx, ry, rwidth, rheight):
-        return self.collide_with_point(rx, ry)
+    def collide_with_rect_3(self, tlc, width, height):
+        (x, y) = tlc
+        return self.collide_with_point((x, y + height))
 
-    def collide_with_rect_2(self, rx, ry, rwidth, rheight):
-        return self.collide_with_point(rx + rwidth, ry)
+    def collide_with_rect_4(self, tlc, width, height):
+        (x, y) = tlc
+        return self.collide_with_point((x + width, y + height))
 
-    def collide_with_rect_3(self, rx, ry, rwidth, rheight):
-        return self.collide_with_point(rx, ry + rheight)
-
-    def collide_with_rect_4(self, rx, ry, rwidth, rheight):
-        return self.collide_with_point(rx + rwidth, ry + rheight)
-
-    def collide_with_rect(self, rx, ry, rwidth, rheight):
-        return self.collide_with_rect_1(rx, ry, rwidth, rheight) \
-            or self.collide_with_rect_2(rx, ry, rwidth, rheight) \
-            or self.collide_with_rect_3(rx, ry, rwidth, rheight) \
-            or self.collide_with_rect_4(rx, ry, rwidth, rheight)
+    def collide_with_rect(self, tlc, width, height):
+        return self.collide_with_rect_1(tlc, width, height) \
+            or self.collide_with_rect_2(tlc, width, height) \
+            or self.collide_with_rect_3(tlc, width, height) \
+            or self.collide_with_rect_4(tlc, width, height)
 
     def collide_with(self, other_sprite):
-        return self.collide_with_rect(other_sprite.x, other_sprite.y,
+        return self.collide_with_rect(other_sprite.tlc(),
                                       other_sprite.width, other_sprite.height)
 
     def debug_draw_collision_data(self):
@@ -296,7 +301,8 @@ class Invader(Sprite):
                 rocket.destroy()
 
     def debug_draw_collision_data(self):
-        pyxel.rectb(self.x, self.y, self.width, self.height, 7)
+        (x, y) = self.tlc()
+        pyxel.rectb(x, y, self.width, self.height, 7)
 
 class InvaderExplosion(Sprite):
 
@@ -380,8 +386,10 @@ class RocketProjectile(Sprite):
                               0, 112,                     # origx, origy
                               1,                          # count
                               direction=TOP_TO_BOTTOM)
-        (x, y) = Rocket.singleton().center()
+        rocket = Rocket.singleton()
+        x = rocket.x
         x -= 3 # FIXME Shouldn't be necessary!
+        y = rocket.y
         Sprite.__init__(self,
                         1,                                # depth
                         x, y,                             # x, y
@@ -401,7 +409,8 @@ class RocketProjectile(Sprite):
                 invader.explode()
 
     def debug_draw_collision_data(self):
-        pyxel.rectb(self.x, self.y, self.width, self.height, 9)
+        (x, y) = self.tlc()
+        pyxel.rectb(x, y, self.width, self.height, 9)
 
 class RocketWeapon:
 
@@ -479,7 +488,8 @@ class Rocket(Sprite):
         self.weapon.fire()
 
     def debug_draw_collision_data(self):
-        pyxel.rectb(self.x, self.y, self.width, self.height, 6)
+        (x, y) = self.tlc()
+        pyxel.rectb(x, y, self.width, self.height, 6)
 
 class Root:
 
