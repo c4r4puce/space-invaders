@@ -132,26 +132,16 @@ class Sprite:
 
     def collide_with_rect_4(self, rx, ry, rwidth, rheight):
         return self.collide_with_point(rx + rwidth, ry + rheight)
-    
-#    def collide_with_rect_5(self, rx, ry, rwidth, rheight):
-#        return self.collide_in_rect(rx, ry, rwidth, rheight)
 
     def collide_with_rect(self, rx, ry, rwidth, rheight):
         return self.collide_with_rect_1(rx, ry, rwidth, rheight) \
             or self.collide_with_rect_2(rx, ry, rwidth, rheight) \
             or self.collide_with_rect_3(rx, ry, rwidth, rheight) \
             or self.collide_with_rect_4(rx, ry, rwidth, rheight)
- #            or self.collide_with_rect_5(rx, ry, rwidth, rheight)
 
- #   def collide_in_rect(self, rx, ry, rwidth, rheight):
- #       if self.x >= rx and rx <= self.x + self.width \
- #           and self.x <= rx+rwidth and rx+rwidth >= self.x + self.width \ # if object is between rx and rx+rwidth
- #           or self.y >= ry and ry <= self.y + self.height \
- #           and self.y <= ry+rheigth and ry+rheight >= self.y + self.height : # if object is between ry and ry+rheight
- #           pass
-
-    def collide_with(self, oc):
-        return self.collide_with_rect(oc.x, oc.y, oc.width, oc.height)
+    def collide_with(self, other_sprite):
+        return self.collide_with_rect(other_sprite.x, other_sprite.y,
+                                      other_sprite.width, other_sprite.height)
 
     def debug_draw_collision_data(self):
         pass
@@ -205,7 +195,7 @@ class Invader(Sprite):
 
         # Do we collide with the rocket?
         rocket = Rocket.singleton()
-        if self.collide_with(rocket):
+        if self.collide_with(rocket) or rocket.collide_with(self):
             self.explode()
             LifeBar.singleton().dec()
             if LifeBar.singleton().is_dead():
@@ -312,7 +302,7 @@ class RocketProjectile(Sprite):
 
         # Do we collide with an invader?
         for invader in Root.singleton().get_sprites("Invader"):
-            if self.collide_with(invader):
+            if self.collide_with(invader) or invader.collide_with(self):
                 self.destroy()
                 invader.explode()
 
