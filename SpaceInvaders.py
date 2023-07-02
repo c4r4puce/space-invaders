@@ -4,9 +4,6 @@
 import pyxel
 from random import randrange
 
-# Debug Parameters:
-DEBUG_COLLISION      = False
-
 # Animation Directions:
 LEFT_TO_RIGHT = 0
 TOP_TO_BOTTOM = 1
@@ -135,20 +132,29 @@ class Sprite:
 
     def collide_with_rect_4(self, rx, ry, rwidth, rheight):
         return self.collide_with_point(rx + rwidth, ry + rheight)
+    
+#    def collide_with_rect_5(self, rx, ry, rwidth, rheight):
+#        return self.collide_in_rect(rx, ry, rwidth, rheight)
 
     def collide_with_rect(self, rx, ry, rwidth, rheight):
         return self.collide_with_rect_1(rx, ry, rwidth, rheight) \
             or self.collide_with_rect_2(rx, ry, rwidth, rheight) \
             or self.collide_with_rect_3(rx, ry, rwidth, rheight) \
             or self.collide_with_rect_4(rx, ry, rwidth, rheight)
+ #            or self.collide_with_rect_5(rx, ry, rwidth, rheight)
+
+ #   def collide_in_rect(self, rx, ry, rwidth, rheight):
+ #       if self.x >= rx and rx <= self.x + self.width \
+ #           and self.x <= rx+rwidth and rx+rwidth >= self.x + self.width \ # if object is between rx and rx+rwidth
+ #           or self.y >= ry and ry <= self.y + self.height \
+ #           and self.y <= ry+rheigth and ry+rheight >= self.y + self.height : # if object is between ry and ry+rheight
+ #           pass
 
     def collide_with(self, oc):
         return self.collide_with_rect(oc.x, oc.y, oc.width, oc.height)
 
-    def debug_draw_collision_data(self, obj, col):
-        pyxel.rectb(self.x, self.y, self.width, self.height, col)
-        pyxel.line(self.x, self.y, obj.x, obj.y, col)
-        pyxel.rectb(obj.x, obj.y, obj.width, obj.height, col)
+    def debug_draw_collision_data(self):
+        pass
 
     def destroy(self):
         if not self.destroyed:
@@ -175,7 +181,7 @@ class Invader(Sprite):
     def __init__ (self):
         invader_animation = Animation(0,                         # img
                                      16, 16,                     # width, height
-                                     randrange(0, 7)*16, 128,    # origx, origy
+                                     randrange(0, 6)*16, 128,    # origx, origy
                                      8,                          # count
                                      direction=TOP_TO_BOTTOM,
                                      fps=6 )
@@ -185,8 +191,46 @@ class Invader(Sprite):
                           1,                                     # speed
                           invader_animation)
 
+    def explode(self):
+        if self.destroyed:
+            return
+        self.destroy()
+        Root.singleton().add_sprite( InvaderExplosion(self) )
+
+    def update(self):
+        Sprite.update(self)
+
+        if self.destroyed:
+            return
+
+        # Do we collide with the rocket?
+        rocket = Rocket.singleton()
+        if self.collide_with(rocket):
+            self.explode()
+            LifeBar.singleton().dec()
+            if LifeBar.singleton().is_dead():
+                rocket.destroy()
+
+    def debug_draw_collision_data(self):
+        pyxel.rectb(self.x, self.y, self.width, self.height, 7)
+
+class InvaderExplosion(Sprite):
+
+    def __init__(self, invader):
+        animation = Animation(0,                       # img
+                              16, 16,                  # width, height
+                              0, randrange(3, 7)*16,   # origx, origy
+                              10,                      # count
+                              loop=False,
+                              fps = 3)
+        Sprite.__init__(self,
+                        1,                             # depth
+                        invader.x, invader.y,          # x, y
+                        invader.speed,                 # speed
+                        animation)
+
 class UFO(Sprite):
-    
+
     def __init__ (self):
         UFO_animation = Animation(1,                          # img
                                   16, 16,                     # width, height
@@ -198,33 +242,6 @@ class UFO(Sprite):
                           -16, 50,                               # x, y
                           3,                                     # speed
                           UFO_animation)
-
-class Shot(Sprite):
-
-    def __init__ (self, rocket):
-        shot_animation = Animation(0,                          # img
-                                   8, 8,                       # width, height
-                                   0, 112,                     # origx, origy
-                                   1)                          # count
-        Sprite.__init__(self,
-                          1,                                     # depth
-                          rocket.x + rocket.x/2, rocket.y,       # x, y
-                          3,                                     # speed
-                          shot_animation)
-
-class InvaderExplosion(Sprite):
-
-    def __init__(self, invader):
-        invader_explosion_animation = Animation(0,                      # img
-                                               16, 16,                  # width, height
-                                               0, randrange(3, 7)*16,   # origx, origy
-                                               10,                      # count
-                                               loop=False) 
-        Sprite.__init__(self,
-                          1,                                             # depth
-                          invader.x, invader.y,                          # x, y
-                          invader.speed,                                 # speed
-                          invader_explosion_animation)
 
 class LifeBar(Sprite):
 
@@ -271,6 +288,37 @@ class LifeBar(Sprite):
     def is_dead(self):
         return self.hit_points == 0
 
+class RocketProjectile(Sprite):
+
+    def __init__ (self):
+        animation = Animation(0,                          # img
+                              8, 8,                       # width, height
+                              0, 112,                     # origx, origy
+                              1,                          # count
+                              direction=TOP_TO_BOTTOM)
+        (x, y) = Rocket.singleton().center()
+        x -= 3 # FIXME Shouldn't be necessary!
+        Sprite.__init__(self,
+                        1,                                # depth
+                        x, y,                             # x, y
+                        -3,                               # speed
+                        animation)
+
+    def update(self):
+        Sprite.update(self)
+
+        if self.destroyed:
+            return
+
+        # Do we collide with an invader?
+        for invader in Root.singleton().get_sprites("Invader"):
+            if self.collide_with(invader):
+                self.destroy()
+                invader.explode()
+
+    def debug_draw_collision_data(self):
+        pyxel.rectb(self.x, self.y, self.width, self.height, 9)
+
 class Rocket(Sprite):
 
     def singleton():
@@ -280,15 +328,19 @@ class Rocket(Sprite):
         return rocket
 
     def __init__(self):
+        global rocket
+        if rocket is not None:
+            raise AssertionError("singleton pattern violation")
+
         self.normal_speed = Animation(0,         # img
                                       16, 16,    # width, height
-                                      0, 0,     # origx, origy
+                                      0, 0,      # origx, origy
                                       4)         # count
-        self.left_speed = Animation(0,         # img
+        self.left_speed = Animation(0,           # img
                                       16, 16,    # width, height
                                       0, 16,     # origx, origy
                                       4)         # count
-        self.right_speed = Animation(0,         # img
+        self.right_speed = Animation(0,          # img
                                       16, 16,    # width, height
                                       0, 32,     # origx, origy
                                       4)         # count
@@ -301,13 +353,9 @@ class Rocket(Sprite):
 
     def update(self):
         if pyxel.btn(pyxel.KEY_LEFT):
-            if self.x - self.rocket_speed >= 0:
-                self.x -= self.rocket_speed
-                self.animation = self.left_speed
+            self.left()
         elif pyxel.btn(pyxel.KEY_RIGHT):
-            if self.x + self.rocket_speed <= pyxel.width - self.width:
-                self.x += self.rocket_speed
-                self.animation = self.right_speed
+            self.right()
         elif pyxel.btn(pyxel.KEY_UP):
             self.shoot()
         else:
@@ -315,9 +363,21 @@ class Rocket(Sprite):
 
         Sprite.update(self)
 
+    def left(self):
+        if self.x - self.rocket_speed >= 0:
+            self.x -= self.rocket_speed
+            self.animation = self.left_speed
+
+    def right(self):
+        if self.x + self.rocket_speed <= pyxel.width - self.width:
+            self.x += self.rocket_speed
+            self.animation = self.right_speed
+
     def shoot(self):
-        raise NotImplementedError()
-        #Root.singleton().add_shot(Shot, rocket.x, rocket.y)
+        Root.singleton().add_sprite( RocketProjectile() )
+
+    def debug_draw_collision_data(self):
+        pyxel.rectb(self.x, self.y, self.width, self.height, 6)
 
 class SpriteGenerator:
 
@@ -349,67 +409,56 @@ class Root:
         global root
         if root is not None:
             raise AssertionError("singleton pattern violation")
-        
+
         self.fps = 30
         pyxel.init(160, 120, fps=self.fps)
         pyxel.load("space-invaders.pyxres")
 
-        self.invaders           = []
-        self.ufos               = []
-        self.shots              = []
-        self.invader_explosions = []
-        self.paused             = False
+        self.ufos   = []
+        self.paused = False
 
         self.generator = SpriteGenerator()
-        self.generator.add(Star, 1)
+        self.generator.add(Invader, 60)
+        self.generator.add(Star,    1)
 
         # Sprites sorted by depth:
         # [0] Stars
-        # [1] Blackholes, planets, planet explosions
-        # [2] Rocket, implosion
+        # [1] Invader explosions
+        # [2] Rocket
         # [3] HUD
-        #
-        # FIXME Find a better name for this tree of sprites.
-        self.sprites = [[], [], [], []]
+        self.sprite_plans = [[], [], [], []]
+
+        # Sprites sorted by class:
+        self.sprite_classes = {}
+
         self.add_sprite( Rocket.singleton() )
         self.add_sprite( LifeBar.singleton() )
 
-        self.debug_objects = []
+        self.debug_mode = False
 
     def run(self):
         pyxel.run(self.update, self.draw)
 
     def add_sprite(self, sprite):
-        self.sprites[sprite.depth].append(sprite)
+        self.sprite_plans[sprite.depth].append(sprite)
+
+        sprite_class = type(sprite).__name__
+        if sprite_class in self.sprite_classes:
+            self.sprite_classes[sprite_class].append(sprite)
+        else:
+            self.sprite_classes[sprite_class] = [sprite]
 
     def remove_sprite(self, sprite):
-        self.sprites[sprite.depth].remove(sprite)
+        self.sprite_plans[sprite.depth].remove(sprite)
+        sprite_class = type(sprite).__name__
+        self.sprite_classes[sprite_class].remove(sprite)
 
-    def rocket_destroyed_by_invader(self, invader):
-        Rocket.singleton().destroy()
-        self.add_invader_explosion( InvaderExplosion(invader) )
-
-    def add_shot(self, shot):
-        self.add_sprite(shot)
-        self.shots.append(shot)
-
-    def remove_shot(self, shot):
-        self.remove_sprite(shot)
-        self.shots.remove(shot)
-
-    def update_shots(self):
-        for shot in self.shots:
-            if not Rocket.singleton().destroyed and shot.collide_with(self.invader):
-                    self.remove_shot(shot)
-                    self.add_invader_explosion(InvaderExplosion(invader))
-
-        for invader_explosion in self.invader_explosions:
-            if invader_explosion.is_done():
-                self.remove_invader_explosion(invader_explosion)
-
-    def add_invader(self, invader):
-        self.add_sprite(invader)
-        self.invaders.append(invader)
+    def get_sprites(self, sprite_class):
+        if sprite_class in self.sprite_classes:
+            sprites = self.sprite_classes[sprite_class]
+        else:
+            sprites = []
+        return sprites
 
     def add_ufo(self, ufo):
         self.add_drawable(ufo)
@@ -418,36 +467,6 @@ class Root:
     def remove_ufo(self, ufo):
         self.remove_drawable(ufo)
         self.ufos.remove(ufo)
-
-    def add_invader_explosion(self, invader_explosion):
-        self.add_sprite(invader_explosion)
-        self.invader_explosions.append(invader_explosion)
-
-    def remove_invader_explosion(self, invader_explosion):
-        self.remove_sprite(invader_explosion)
-        self.invader_explosions.remove(invader_explosion)
-
-    def update_invaders(self):
-        rocket = Rocket.singleton()
-        if rocket.destroyed:
-            return
-        for invader in self.invaders:
-            if invader.destroyed:
-                continue
-            if invader.collide_with(rocket):
-                invader.destroy()
-                LifeBar.singleton().dec()
-                self.add_invader_explosion(InvaderExplosion(invader))
-                if LifeBar.singleton().is_dead():
-                    self.rocket_destroyed_by_invader(invader)
-
-        if pyxel.frame_count % 60 == 0:
-            invader = Invader()
-            self.add_invader(invader)
-
-        for invader_explosion in self.invader_explosions:
-            if invader_explosion.is_done():
-                self.remove_invader_explosion(invader_explosion)
 
     def is_game_over(self):
         return LifeBar.singleton().is_dead()
@@ -460,37 +479,37 @@ class Root:
             self.paused = not self.paused
 
         if pyxel.btnp(pyxel.KEY_F1):
-            global DEBUG_COLLISION
-            DEBUG_COLLISION = not DEBUG_COLLISION
+            self.debug_mode = not self.debug_mode
+            if self.debug_mode:
+                print("Debug Mode: enabled.")
+            else:
+                print("Debug Mode: disabled.")
+
+        if self.debug_mode:
+            print(f"Sprite Plans:")
+            for depth in range( len(self.sprite_plans) ):
+                print(f"    [{depth}] {len(self.sprite_plans[depth])}")
+            print(f"Sprite Classes:")
+            for cls, sprites in self.sprite_classes.items():
+                print(f"    {cls}: {len(sprites)}")
 
         if self.paused:
             return
 
-        for depth in range(0, len(self.sprites)):
-            sprites = self.sprites[depth]
-            for sprite in sprites:
+        for depth in range(0, len(self.sprite_plans)):
+            for sprite in self.sprite_plans[depth]:
                 sprite.update()
 
-                # Destroy the sprite once it leave the screen.
-                if not sprite.is_visible():
+                # Destroy the sprite if:
+                # - it left the screen
+                # - or it's animation is done.
+                if not sprite.is_visible() or sprite.is_done():
                     sprite.destroy()
-
-        self.update_shots()
-        self.update_invaders()
 
         self.generator.generate()
 
         if self.is_game_over():
             return
-
-    def debug_draw_collision_data(self, collidables):
-        if Rocket.singleton().destroyed:
-            return
-
-        col = 0
-        for c in collidables:
-            c.debug_draw_collision_data(Rocket.singleton(), 2+col)
-            col += 1
 
     def draw_game_over(self):
         if self.is_game_over():
@@ -504,23 +523,17 @@ class Root:
 
     def draw(self):
         pyxel.cls(0)
-        for sprites in self.sprites:
+        for sprites in self.sprite_plans:
             for sprite in sprites:
                 sprite.draw()
 
-        if DEBUG_COLLISION:
-            for cl in [self.invaders]:
-                self.debug_draw_collision_data(cl)
+        if self.debug_mode:
+            for depth in range(0, len(self.sprite_plans)):
+                for sprite in self.sprite_plans[depth]:
+                    sprite.debug_draw_collision_data()
 
         self.draw_game_over()
         self.draw_paused()
-
-        f = pyxel.frame_count % self.fps
-        if (f // 8) % 2 == 0:
-            color = 1
-            for o in self.debug_objects:
-                pyxel.rectb(o.x, o.y, o.width, o.height, color)
-                color += 1
 
 def main():
     Root.singleton().run()
