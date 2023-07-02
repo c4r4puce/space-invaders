@@ -99,8 +99,10 @@ class Sprite:
     def draw(self):
         self.animation.draw_at(self.x, self.y)
 
+    # FIXME Check RocketProctile are effectively removed once leaving the screen
+    # by the top.
     def is_visible(self):
-        return self.y < pyxel.height
+        return self.y - self.height >= 0 and self.y < pyxel.height
 
     def is_done(self):
         return not self.animation.running
