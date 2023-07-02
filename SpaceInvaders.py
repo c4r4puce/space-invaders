@@ -175,7 +175,7 @@ class Invader(Sprite):
     def __init__ (self):
         invader_animation = Animation(0,                         # img
                                      16, 16,                     # width, height
-                                     randrange(0, 6)*16, 128,    # origx, origy
+                                     randrange(0, 7)*16, 128,    # origx, origy
                                      8,                          # count
                                      direction=TOP_TO_BOTTOM,
                                      fps=6 )
@@ -205,8 +205,7 @@ class Shot(Sprite):
         shot_animation = Animation(0,                          # img
                                    8, 8,                       # width, height
                                    0, 112,                     # origx, origy
-                                   1,                          # count
-                                   direction=TOP_TO_BOTTOM)
+                                   1)                          # count
         Sprite.__init__(self,
                           1,                                     # depth
                           rocket.x + rocket.x/2, rocket.y,       # x, y
@@ -310,11 +309,15 @@ class Rocket(Sprite):
                 self.x += self.rocket_speed
                 self.animation = self.right_speed
         elif pyxel.btn(pyxel.KEY_UP):
-            pass
+            self.shoot()
         else:
             self.animation = self.normal_speed
 
         Sprite.update(self)
+
+    def shoot(self):
+        raise NotImplementedError()
+        #Root.singleton().add_shot(Shot, rocket.x, rocket.y)
 
 class SpriteGenerator:
 
