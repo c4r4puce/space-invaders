@@ -83,16 +83,15 @@ class Animation:
 
 class Sprite:
 
-    def __init__(self, depth, x, y, speed, animation):
-        self.animation = animation
-        self.depth     = depth
-        self.destroyed = False
-        self.height    = animation.height
-        self.img       = animation.img
-        self.speed     = speed
-        self.width     = animation.width
-        self.x         = x
-        self.y         = y
+    def __init__(self, depth, pos, speed, animation):
+        self.animation   = animation
+        self.depth       = depth
+        self.destroyed   = False
+        self.height      = animation.height
+        self.img         = animation.img
+        self.speed       = speed
+        self.width       = animation.width
+        (self.x, self.y) = pos
 
     # Center's coordinates.
     def pos(self):
@@ -275,23 +274,23 @@ class Star(Sprite):
                                    fps=10)
         Sprite.__init__(self,
                           0,                                 # depth
-                          randrange(0, pyxel.width-8), -8,   # x, y
+                          (randrange(0, pyxel.width-8), -8), # pos
                           randrange(2, 4),                   # speed
                           star_animation)
 
 class Invader(Sprite):
 
     def __init__ (self):
-        animation = Animation(0,                         # img
+        animation = Animation(0,                          # img
                               16, 16,                     # width, height
                               randrange(0, 6)*16, 128,    # origx, origy
                               8,                          # count
                               direction=TOP_TO_BOTTOM,
                               fps=6 )
         Sprite.__init__(self,
-                        1,                                     # depth
-                        randrange(0, pyxel.width-16), -16,     # x, y
-                        1,                                     # speed
+                        1,                                   # depth
+                        (randrange(0, pyxel.width-16), -16), # pos
+                        1,                                   # speed
                         animation)
 
     def explode(self):
@@ -324,7 +323,7 @@ class InvaderExplosion(Sprite):
                               fps = 3)
         Sprite.__init__(self,
                         1,                             # depth
-                        invader.x, invader.y,          # x, y
+                        invader.pos(),                 # pos
                         invader.speed,                 # speed
                         animation)
 
@@ -337,9 +336,9 @@ class UFO(Sprite):
                                   7,                          # count
                                   fps=6 )
         Sprite.__init__(self,
-                          1,                                     # depth
-                          -16, 50,                               # x, y
-                          3,                                     # speed
+                          1,                                  # depth
+                          (-16, 50),                          # pos
+                          3,                                  # speed
                           UFO_animation)
 
 class LifeBar(Sprite):
@@ -357,7 +356,7 @@ class LifeBar(Sprite):
                               1)           # count
         Sprite.__init__(self,
                           3,               # depth
-                          0, 0,            # x, y
+                          (0, 0),          # pos
                           0,               # speed
                           animation)
         self.hit_points = 18
@@ -396,12 +395,9 @@ class RocketProjectile(Sprite):
                               1,                          # count
                               direction=TOP_TO_BOTTOM)
         rocket = Rocket.singleton()
-        x = rocket.x
-        x -= 3 # FIXME Shouldn't be necessary!
-        y = rocket.y
         Sprite.__init__(self,
                         1,                                # depth
-                        x, y,                             # x, y
+                        rocket.pos(),                     # pos
                         -3,                               # speed
                         animation)
 
@@ -457,7 +453,7 @@ class Rocket(Sprite):
                                       4)         # count
         Sprite.__init__(self,
                         2,                                           # depth
-                        (pyxel.width / 2) - 8, pyxel.height - 16,    # x, y
+                        ((pyxel.width / 2) - 8, pyxel.height - 16),  # pos
                         0,                                           # speed
                         self.normal_speed)
         self.rocket_speed = 1.5
