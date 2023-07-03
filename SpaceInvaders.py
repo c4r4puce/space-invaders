@@ -149,8 +149,19 @@ class Sprite:
         return self.collide_with_rect(other_sprite.tlc(),
                                       other_sprite.width, other_sprite.height)
 
-    def debug_draw_collision_data(self):
-        pass
+    def draw_debug_overlay(self):
+        color = 8
+
+        # Collision box
+        (x, y) = self.tlc()
+        pyxel.rectb(x, y, self.width, self.height, color)
+
+        # Center
+        pyxel.pset(self.x,     self.y - 1, color)
+        pyxel.pset(self.x,     self.y + 1, color)
+        pyxel.pset(self.x - 1, self.y,     color)
+        pyxel.pset(self.x,     self.y,     color)
+        pyxel.pset(self.x + 1, self.y,     color)
 
     def destroy(self):
         if not self.destroyed:
@@ -247,9 +258,11 @@ class SpriteManager:
                 sprite.draw()
 
         if Root.singleton().debug_mode:
-            for depth in range(0, len(self.plans)):
-                for sprite in self.plans[depth]:
-                    sprite.debug_draw_collision_data()
+            for cls in ["Invader", "Rocket", "RocketProjectile"]:
+                if cls not in self.classes:
+                    continue
+                for sprite in self.classes[cls]:
+                    sprite.draw_debug_overlay()
 
 class Star(Sprite):
 
@@ -269,17 +282,17 @@ class Star(Sprite):
 class Invader(Sprite):
 
     def __init__ (self):
-        invader_animation = Animation(0,                         # img
-                                     16, 16,                     # width, height
-                                     randrange(0, 6)*16, 128,    # origx, origy
-                                     8,                          # count
-                                     direction=TOP_TO_BOTTOM,
-                                     fps=6 )
+        animation = Animation(0,                         # img
+                              16, 16,                     # width, height
+                              randrange(0, 6)*16, 128,    # origx, origy
+                              8,                          # count
+                              direction=TOP_TO_BOTTOM,
+                              fps=6 )
         Sprite.__init__(self,
-                          1,                                     # depth
-                          randrange(0, pyxel.width-16), -16,     # x, y
-                          1,                                     # speed
-                          invader_animation)
+                        1,                                     # depth
+                        randrange(0, pyxel.width-16), -16,     # x, y
+                        1,                                     # speed
+                        animation)
 
     def explode(self):
         assert not self.destroyed, "Already destroyed"
@@ -299,10 +312,6 @@ class Invader(Sprite):
             LifeBar.singleton().dec()
             if LifeBar.singleton().is_dead():
                 rocket.destroy()
-
-    def debug_draw_collision_data(self):
-        (x, y) = self.tlc()
-        pyxel.rectb(x, y, self.width, self.height, 7)
 
 class InvaderExplosion(Sprite):
 
@@ -408,10 +417,6 @@ class RocketProjectile(Sprite):
                 self.destroy()
                 invader.explode()
 
-    def debug_draw_collision_data(self):
-        (x, y) = self.tlc()
-        pyxel.rectb(x, y, self.width, self.height, 9)
-
 class RocketWeapon:
 
     def __init__(self, cooldown):
@@ -451,10 +456,10 @@ class Rocket(Sprite):
                                       0, 32,     # origx, origy
                                       4)         # count
         Sprite.__init__(self,
-                          2,                                           # depth
-                          (pyxel.width / 2) - 8, pyxel.height - 16,    # x, y
-                          0,                                           # speed
-                          self.normal_speed)
+                        2,                                           # depth
+                        (pyxel.width / 2) - 8, pyxel.height - 16,    # x, y
+                        0,                                           # speed
+                        self.normal_speed)
         self.rocket_speed = 1.5
 
         self.weapon = RocketWeapon(10)
@@ -486,10 +491,6 @@ class Rocket(Sprite):
 
     def shoot(self):
         self.weapon.fire()
-
-    def debug_draw_collision_data(self):
-        (x, y) = self.tlc()
-        pyxel.rectb(x, y, self.width, self.height, 6)
 
 class Root:
 
