@@ -429,8 +429,13 @@ class RocketWeapon:
     def ready(self):
         return self.cooldown_current == 0
 
+    # Try to fire. Return True if fired, False otherwise.
     def fire(self):
+        if not self.ready():
+            return False
         SpriteManager.singleton().attach( RocketProjectile() )
+        self.reload()
+        return True
 
 class Rocket(Sprite):
 
