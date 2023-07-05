@@ -14,6 +14,13 @@ rocket         = None
 root           = None
 sprite_manager = None
 
+# An animation is a list of COUNT frames of WIDTH x HEIGHT pixels each taken
+# from the image IMG starting at (ORIGX, ORIGY) following the given DIRECTION.
+#
+# A loop animation (LOOP set to True) is an animation that keeps repeating
+# itself, i.e., that won't stop by itself.
+#
+# The animation speed is described by its FPS, i.e., frames per seconds.
 class Animation:
 
     def __init__(self,
@@ -72,8 +79,8 @@ class Animation:
         else: # self.direction == TOP_TO_BOTTOM
             self.framey += self.height
 
-    # Draw at the given top left corner.
-    def draw_at(self, tlc):                 # FIXME life bar is not draw
+    # Draw at the given top left corner's coordinates.
+    def draw_at(self, tlc):
         (x, y) = tlc
         pyxel.blt(x, y,                     # (x, y) destination
                   self.img,                 # numero image source
@@ -81,6 +88,18 @@ class Animation:
                   self.width, self.height,  # (largeur, hauteur) source et destination
                   0)                        # couleur transparente
 
+# A sprite is an animated object moving around on the screen. It can collide
+# with other sprites.
+#
+# A sprite have a DEPTH to help decide which sprite to draw on top of the other.
+#
+# The position (POS) of a sprite is the (x, y) coordinates of its center. While
+# it's TLC is the (x, y) coordinates of its top left corner. TLC is used to draw
+# of its animation.
+#
+# Movement is described by its SPEED and is limited to vertical movements only.
+# A positive speed means the sprite is moving from top to bottom. A negative one
+# means moving from bottom to top.
 class Sprite:
 
     def __init__(self, depth, pos, speed, animation):
@@ -112,9 +131,11 @@ class Sprite:
     def draw(self):
         self.animation.draw_at( self.tlc() )
 
+    # Tell if the sprite can be found somewhere on the screen.
     def is_visible(self):
-        return self.y < pyxel.height + self.height/2 or self.y < 0 - self.height/2
+        return self.y < pyxel.height and self.y + self.height >= 0
 
+    # Tell if sprite's animation is still running.
     def is_done(self):
         return not self.animation.running
 
@@ -144,10 +165,19 @@ class Sprite:
             or self.collide_with_rect_3(tlc, width, height) \
             or self.collide_with_rect_4(tlc, width, height)
 
+    # Tell if the current sprite collide with the other one.
+    #
+    # To detect all collision scenario, you should call this function on both
+    # sprites, i.e., foo.collide_with(bar) and bar.collide_with(foo).
     def collide_with(self, other_sprite):
+        if self.destroyed or other_sprite.destroyed:
+            return False
         return self.collide_with_rect(other_sprite.tlc(),
                                       other_sprite.width, other_sprite.height)
 
+    # Draw sprite's debug overlay.
+    #
+    # It show its collision box and its center.
     def draw_debug_overlay(self):
         color = 8
 
@@ -167,6 +197,17 @@ class Sprite:
             SpriteManager.singleton().detach(self)
             self.destroyed = True
 
+# Help manage sprites.
+#
+# Once a sprite is attached to the manager, it start being automatically updated
+# and drawn. Its destruction is also automatically triggered when it leaves the
+# screen or its animation is over.
+#
+# Sprites are sorted by depth and classes. Use get() to retrieve all the sprites
+# from a given class.
+#
+# The manager also provide automatic sprite generation at a given frequency via
+# spawn().
 class SpriteManager:
 
     def singleton():
@@ -212,12 +253,18 @@ class SpriteManager:
             sprites = []
         return sprites
 
+    # Tell the manager to spawn a new sprite with the CLS class every FREQ
+    # frames.
     def spawn(self, cls, freq):
         if freq in self.frequencies:
             self.frequencies[freq].append(cls)
         else:
             self.frequencies[freq] = [cls]
 
+    # Update the sprites under manager's control taking care to destroy them if
+    # necessary.
+    #
+    # Also spawn new sprites if necessary.
     def update(self):
 
         # Update sprites, destroying them when necessary.
@@ -251,6 +298,7 @@ class SpriteManager:
             for cls, sprites in self.classes.items():
                 print(f"    {cls}: {len(sprites)}")
 
+    # Draw the sprites under manager's control taking into account their depth.
     def draw(self):
         for sprites in self.plans:
             for sprite in sprites:
@@ -263,15 +311,23 @@ class SpriteManager:
                 for sprite in self.classes[cls]:
                     sprite.draw_debug_overlay()
 
+class Star(Sprite):
+
+    def __init__(self):
+        star_animation = Animation(1,                        # img
+                                   8, 8,                     # width, height
+                                   randrange(0, 9) * 8, 16,  # origx, origy
+                                   1,                        # count
+                                   direction=TOP_TO_BOTTOM,
+                                   fps=10)
+        Sprite.__init__(self,
+                        0,                                 # depth
+                        (randrange(0, pyxel.width-8), -8), # pos
+                        randrange(2, 4),                   # speed
+                        star_animation)
+
 class Projectile(Sprite):
 
-    def __init__(self, depth, pos, speed, animation):
-        Sprite.__init__(self,
-                        1,    # depth
-                        pos,
-                        speed,
-                        animation)
-        
     def handle_collision(self):
         pass
 
@@ -428,6 +484,7 @@ class Rocket(Sprite):
 #    def hit(self):
 #        pass
 
+# An invader is a sprite that can collide with the rocket.
 class Invader(Sprite):
 
     def __init__ (self):
@@ -437,15 +494,11 @@ class Invader(Sprite):
                               8,                          # count
                               direction=TOP_TO_BOTTOM,
                               fps=6 )
-
-        half_width = int(animation.width / 2)
-        pos        = (randrange(half_width, pyxel.width - half_width), -animation.height)
         Sprite.__init__(self,
-                        1,           # depth
-                        pos,
-                        1,           # speed
+                        1,                                   # depth
+                        (randrange(0, pyxel.width-16), -16), # pos
+                        1,                                   # speed
                         animation)
-        self.weapon = InvaderWeapon(self)
 
     def explode(self):
         assert not self.destroyed, "Already destroyed"
@@ -454,10 +507,9 @@ class Invader(Sprite):
 
     def update(self):
         Sprite.update(self)
-        self.weapon.update()
+
         if self.destroyed:
             return
-        self.weapon.fire()
 
         # Do we collide with the rocket?
         rocket = Rocket.singleton()
@@ -512,21 +564,7 @@ class UFO(Sprite):
                           3,                                  # speed
                           UFO_animation)
 
-class Star(Sprite):
-
-    def __init__(self):
-        star_animation = Animation(1,                        # img
-                                   8, 8,                     # width, height
-                                   randrange(0, 9) * 8, 16,  # origx, origy
-                                   1,                        # count
-                                   direction=TOP_TO_BOTTOM,
-                                   fps=10)
-        Sprite.__init__(self,
-                          0,                                 # depth
-                          (randrange(0, pyxel.width-8), -8), # pos
-                          randrange(2, 4),                   # speed
-                          star_animation)
-
+# Draw rocket's remaining hit points.
 class LifeBar(Sprite):
 
     def singleton():
@@ -537,31 +575,28 @@ class LifeBar(Sprite):
 
     def __init__(self):
         animation = Animation(1,           # img
-                              24, 8,       # width, height
+                              40, 16,      # width, height
                               0, 0,        # origx, origy
                               1)           # count
-        self.width = 24
-        self.height = 8
+        pos = (2 + animation.width / 2, 2 + animation.height / 2)
         Sprite.__init__(self,
-                          3,                  # depth
-                         (0 + self.width/2,   # pos
-                          0 + self.height/2), # pos
-                          0,                  # speed
+                          3,               # depth
+                          pos,
+                          0,               # speed
                           animation)
         self.hit_points = 18
 
     def draw(self):
         Sprite.draw(self)
 
-        x = self.x -10
-        y = self.y -2
-        w = self.hit_points
-        h = 4
-        color = 2
-        pyxel.rect(x, y, w, h, color)
-        pyxel.rect(x+1, y+1, w-2, h-2, 8)
-        pyxel.rect(x+3, y+1, 3, 1, 7)
-        pyxel.rect(x+7, y+1, 1, 1, 7)
+        (x, y) = self.tlc()
+        (x, y) = (x + 2, y + 2)
+        w      = self.hit_points
+        h      = 4
+        pyxel.rect(x,     y,     w,     h,     2)
+        pyxel.rect(x + 1, y + 1, w - 2, h - 2, 8)
+        pyxel.rect(x + 3, y + 1, 3,     1,     7)
+        pyxel.rect(x + 7, y + 1, 1,     1,     7)
 
     def dec(self):
         self.hit_points = max(0, self.hit_points - 2)
@@ -574,6 +609,117 @@ class LifeBar(Sprite):
 
     def is_dead(self):
         return self.hit_points == 0
+
+class RocketProjectile(Sprite):
+
+    def __init__ (self):
+        animation = Animation(0,                          # img
+                              8, 8,                       # width, height
+                              0, 112,                     # origx, origy
+                              1,                          # count
+                              direction=TOP_TO_BOTTOM)
+        rocket = Rocket.singleton()
+        Sprite.__init__(self,
+                        1,                                # depth
+                        rocket.pos(),                     # pos
+                        -3,                               # speed
+                        animation)
+
+    def update(self):
+        Sprite.update(self)
+
+        if self.destroyed:
+            return
+
+        # Do we collide with an invader?
+        for invader in SpriteManager.singleton().get("Invader"):
+            if self.collide_with(invader) or invader.collide_with(self):
+                self.destroy()
+                invader.explode()
+
+class RocketWeapon:
+
+    def __init__(self, cooldown):
+        self.cooldown_reload  = cooldown
+        self.cooldown_current = 0
+
+    def update(self):
+        if self.cooldown_current > 0:
+            self.cooldown_current -= 1
+
+    def reload(self):
+        self.cooldown_current = self.cooldown_reload
+
+    def ready(self):
+        return self.cooldown_current == 0
+
+    # Try to fire. Return True if fired, False otherwise.
+    def fire(self):
+        if not self.ready():
+            return False
+        SpriteManager.singleton().attach( RocketProjectile() )
+        self.reload()
+        return True
+
+class Rocket(Sprite):
+
+    def singleton():
+        global rocket
+        if rocket is None:
+            rocket = Rocket()
+        return rocket
+
+    def __init__(self):
+        global rocket
+        assert rocket is None, "Singleton pattern violation"
+
+        self.normal_animation = Animation(0,         # img
+                                          16, 16,    # width, height
+                                          0, 0,      # origx, origy
+                                          4)         # count
+        self.left_animation = Animation(0,           # img
+                                        16, 16,      # width, height
+                                        0, 16,       # origx, origy
+                                        4)           # count
+        self.right_animation = Animation(0,          # img
+                                         16, 16,     # width, height
+                                         0, 32,      # origx, origy
+                                         4)          # count
+        Sprite.__init__(self,
+                        2,                                           # depth
+                        ((pyxel.width / 2) - 8, pyxel.height - 16),  # pos
+                        0,                                           # speed
+                        self.normal_animation)
+        self.horizontal_speed = 1.5
+        self.weapon           = RocketWeapon(10)
+
+    def update(self):
+        if pyxel.btn(pyxel.KEY_LEFT):
+            self.left()
+        elif pyxel.btn(pyxel.KEY_RIGHT):
+            self.right()
+        else:
+            self.animation = self.normal_animation
+
+        if pyxel.btn(pyxel.KEY_UP):
+            self.shoot()
+
+        self.weapon.update()
+
+        Sprite.update(self)
+
+    def left(self):
+        if self.x - self.horizontal_speed >= 0:
+            self.x -= self.horizontal_speed
+        self.animation = self.left_animation
+
+    def right(self):
+        if self.x + self.horizontal_speed <= pyxel.width - self.width:
+            self.x += self.horizontal_speed
+            self.animation = self.right_animation
+
+    def shoot(self):
+        self.weapon.fire()
 
 class Root:
 
@@ -608,12 +754,12 @@ class Root:
         return LifeBar.singleton().is_dead()
 
     def update(self):
+
+        # Quit the game.
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
 
-        if pyxel.btnp(pyxel.KEY_SPACE):
-            self.paused = not self.paused
-
+        # Toggle debug mode.
         if pyxel.btnp(pyxel.KEY_F1):
             self.debug_mode = not self.debug_mode
             if self.debug_mode:
@@ -621,13 +767,14 @@ class Root:
             else:
                 print("Debug Mode: disabled.")
 
+        # Toggle pause mode.
+        if pyxel.btnp(pyxel.KEY_F2):
+            self.paused = not self.paused
+
         if self.paused:
             return
 
         SpriteManager.singleton().update()
-
-        if self.is_game_over():
-            return
 
     def draw_game_over(self):
         if self.is_game_over():
@@ -637,7 +784,7 @@ class Root:
         if self.paused:
             f = pyxel.frame_count % self.fps
             if (f // 8) % 2 == 0:
-                pyxel.text(1, 1, "PAUSED", 7)
+                pyxel.text(1, pyxel.height - 7, "HIT F2 TO RESUME", 7)
 
     def draw(self):
         pyxel.cls(0)
