@@ -423,7 +423,7 @@ class Rocket(Sprite):
         LifeBar.singleton().dec()
         if LifeBar.singleton().is_dead():
             self.destroy()
-            # FIXME Create a RocketExplosion here.
+            SpriteManager.singleton().attach( InvaderExplosion(self) )
 
 #    def hit(self):
 #        pass
@@ -484,7 +484,19 @@ class InvaderExplosion(Sprite):
 
 class RocketExplosion(Sprite):
 
-    pass
+    def __init__(self):
+        rocket = Rocket.singleton()
+        animation = Animation(1,                       # img
+                              16, 16,                  # width, height
+                              0, 40,                   # origx, origy
+                              4,                       # count
+                              loop=False,
+                              fps = 10)
+        Sprite.__init__(self,
+                        1,                             # depth
+                        Rocket.singleton().pos(),      # pos
+                        Rocket.singleton().speed,      # speed
+                        animation)
 
 class UFO(Sprite):
 
