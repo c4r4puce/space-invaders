@@ -580,12 +580,12 @@ class Root:
         return LifeBar.singleton().is_dead()
 
     def update(self):
+
+        # Quit the game.
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
 
-        if pyxel.btnp(pyxel.KEY_SPACE):
-            self.paused = not self.paused
-
+        # Toggle debug mode.
         if pyxel.btnp(pyxel.KEY_F1):
             self.debug_mode = not self.debug_mode
             if self.debug_mode:
@@ -593,13 +593,14 @@ class Root:
             else:
                 print("Debug Mode: disabled.")
 
+        # Toggle pause mode.
+        if pyxel.btnp(pyxel.KEY_F2):
+            self.paused = not self.paused
+
         if self.paused:
             return
 
         SpriteManager.singleton().update()
-
-        if self.is_game_over():
-            return
 
     def draw_game_over(self):
         if self.is_game_over():
@@ -609,7 +610,7 @@ class Root:
         if self.paused:
             f = pyxel.frame_count % self.fps
             if (f // 8) % 2 == 0:
-                pyxel.text(1, 1, "PAUSED", 7)
+                pyxel.text(1, pyxel.height - 7, "HIT F2 TO RESUME", 7)
 
     def draw(self):
         pyxel.cls(0)
