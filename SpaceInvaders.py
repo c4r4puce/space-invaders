@@ -404,9 +404,10 @@ class LifeBar(Sprite):
                               40, 16,      # width, height
                               0, 0,        # origx, origy
                               1)           # count
+        pos = (2 + animation.width / 2, 2 + animation.height / 2)
         Sprite.__init__(self,
                           3,               # depth
-                          (0, 0),          # pos
+                          pos,
                           0,               # speed
                           animation)
         self.hit_points = 18
@@ -414,15 +415,14 @@ class LifeBar(Sprite):
     def draw(self):
         Sprite.draw(self)
 
-        x = self.x + 2
-        y = self.y + 2
-        w = self.hit_points
-        h = 4
-        color = 2
-        pyxel.rect(x, y, w, h, color)
-        pyxel.rect(x+1, y+1, w-2, h-2, 8)
-        pyxel.rect(self.x+5, self.y+3, 3, 1, 7)
-        pyxel.rect(self.x+9, self.y+3, 1, 1, 7)
+        (x, y) = self.tlc()
+        (x, y) = (x + 2, y + 2)
+        w      = self.hit_points
+        h      = 4
+        pyxel.rect(x,     y,     w,     h,     2)
+        pyxel.rect(x + 1, y + 1, w - 2, h - 2, 8)
+        pyxel.rect(x + 3, y + 1, 3,     1,     7)
+        pyxel.rect(x + 7, y + 1, 1,     1,     7)
 
     def dec(self):
         self.hit_points = max(0, self.hit_points - 2)
