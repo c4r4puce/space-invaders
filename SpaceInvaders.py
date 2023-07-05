@@ -265,19 +265,15 @@ class SpriteManager:
 
 class Projectile(Sprite):
 
-    def __init__ (self, depth, animation, pos, speed, other_sprite):
+    def __init__(self, depth, pos, speed, animation):
         Sprite.__init__(self,
                         1,    # depth
                         pos,
                         speed,
-                        animation,
-                        other_sprite)
-
+                        animation)
+        
     def handle_collision(self):
-        for other_sprite in SpriteManager.singleton().get("other_sprite"):
-            if self.collide_with(other_sprite) or other_sprite.collide_with(self):
-                self.destroy()
-                other_sprite.explode()
+        pass
 
     def update(self):
         Sprite.update(self)
@@ -286,6 +282,37 @@ class Projectile(Sprite):
             return
 
         self.handle_collision()
+
+class RocketProjectile(Projectile):
+
+    def __init__(self):
+        animation = Animation(0,                          # img
+                              8, 8,                       # width, height
+                              0, 112,                     # origx, origy
+                              1)                          # count
+        Projectile.__init__(self, 1, Rocket.singleton().pos(), -3, animation)
+
+    def handle_collision(self):
+        for invader in SpriteManager.singleton().get("Invader"):
+            if self.collide_with(invader) or invader.collide_with(self):
+                self.destroy()
+                invader.explode()
+
+class InvaderProjectile(Projectile):
+
+    def __init__(self, invader):
+        animation = Animation(0,                          # img
+                              8, 8,                       # width, height
+                              8, 112,                     # origx, origy
+                              1)                          # count
+        Projectile.__init__(self, 1, invader.pos(), 3, animation)
+
+    def handle_collision(self):
+        rocket = Rocket.singleton()
+        if self.collide_with(rocket) or rocket.collide_with(self):
+            self.destroy()
+            rocket.explode()
+            #rocket.hit(self)
 
 class Weapon:
 
@@ -303,36 +330,33 @@ class Weapon:
     def ready(self):
         return self.cooldown_current == 0
 
-class RocketProjectile(Projectile):
-
-    def __init__(self):
-        animation = Animation(0,                          # img
-                              8, 8,                       # width, height
-                              0, 112,                     # origx, origy
-                              1)                          # count
-
-        Projectile.__init__(self,1, animation, Rocket.singleton().pos, -3, Invader() )
-
-    def update(self):
-        self.handle_collision(self)
-        Projectile.update()
-
-class RocketWeapon(Weapon):
-    def __init__(self, cooldown):
-        self.cooldown_reload  = cooldown
-        self.cooldown_current = 0
-        self.weapon = Weapon(10)
-
-    def update(self):
-        self.weapon.update()
+    def projectile(self):
+        raise NotImplementedError()
 
     # Try to fire. Return True if fired, False otherwise.
     def fire(self):
         if not self.ready():
             return False
-      # SpriteManager.singleton().attach( RocketProjectile() )#FIXME problems with positional arguments
+        SpriteManager.singleton().attach( self.projectile() )
         self.reload()
         return True
+
+class RocketWeapon(Weapon):
+    
+    def __init__(self):
+        Weapon.__init__(self, 10)
+
+    def projectile(self):
+        return RocketProjectile()
+
+class InvaderWeapon(Weapon):
+    
+    def __init__(self, invader):
+        Weapon.__init__(self, 100)
+        self.invader = invader
+
+    def projectile(self):
+        return InvaderProjectile(self.invader)
 
 class Rocket(Sprite):
 
@@ -365,7 +389,7 @@ class Rocket(Sprite):
                         self.normal_speed)
         self.rocket_speed = 1.5
 
-        self.weapon = RocketWeapon(10)
+        self.weapon = RocketWeapon()
 
     def update(self):
         if pyxel.btn(pyxel.KEY_LEFT):
@@ -383,47 +407,26 @@ class Rocket(Sprite):
         Sprite.update(self)
 
     def left(self):
-        if self.x - self.rocket_speed >= 0:
+        if self.x - self.width/2 - self.rocket_speed >= 0:
             self.x -= self.rocket_speed
             self.animation = self.left_speed
 
     def right(self):
-        if self.x + self.rocket_speed <= pyxel.width - self.width:
+        if self.x + self.width/2 + self.rocket_speed <= pyxel.width:
             self.x += self.rocket_speed
             self.animation = self.right_speed
 
     def shoot(self):
         self.weapon.fire()
 
-class InvaderProjectile(Projectile):
+    def explode(self):
+        LifeBar.singleton().dec()
+        if LifeBar.singleton().is_dead():
+            self.destroy()
+            # FIXME Create a RocketExplosion here.
 
-    def __init__(self):
-        animation = Animation(0,                          # img
-                              8, 8,                       # width, height
-                              8, 112,                     # origx, origy
-                              1)                          # count
-        Projectile.__init__(self,1, animation, Invader.pos, 3, Rocket.singleton() )
-
-    def update(self):
-        self.handle_collision(self)
-        Projectile.update()
-
-class InvaderWeapon(Weapon):
-    def __init__(self, cooldown):
-        self.cooldown_reload  = cooldown
-        self.cooldown_current = 0
-        self.weapon = Weapon(20)
-
-    def update(self):
-        self.weapon.update()
-
-    # Try to fire. Return True if fired, False otherwise.
-    def fire(self):
-        if not self.ready():
-            return False
-      # SpriteManager.singleton().attach(InvaderProjectile(self) )#FIXME problems with positional arguments
-        self.reload()
-        return True
+#    def hit(self):
+#        pass
 
 class Invader(Sprite):
 
@@ -439,12 +442,12 @@ class Invader(Sprite):
                         (randrange(0, pyxel.width-16), -16), # pos
                         1,                                   # speed
                         animation)
-        self.weapon = InvaderWeapon(20)
+        self.weapon = InvaderWeapon(self)
 
     def explode(self):
         assert not self.destroyed, "Already destroyed"
         self.destroy()
-      # SpriteManager.singleton().attach(InvaderExplosion(self) )#FIXME problems with positional arguments
+        SpriteManager.singleton().attach( InvaderExplosion(self) )
 
     def update(self):
         Sprite.update(self)
@@ -475,6 +478,10 @@ class InvaderExplosion(Sprite):
                         invader.pos(),                 # pos
                         invader.speed,                 # speed
                         animation)
+
+class RocketExplosion(Sprite):
+
+    pass
 
 class UFO(Sprite):
 
@@ -515,28 +522,31 @@ class LifeBar(Sprite):
 
     def __init__(self):
         animation = Animation(1,           # img
-                              40, 8,       # width, height
+                              24, 8,       # width, height
                               0, 0,        # origx, origy
                               1)           # count
+        self.width = 24
+        self.height = 8
         Sprite.__init__(self,
-                          3,               # depth
-                          (0, 0),          # pos
-                          0,               # speed
+                          3,                  # depth
+                         (0 + self.width/2,   # pos
+                          0 + self.height/2), # pos
+                          0,                  # speed
                           animation)
         self.hit_points = 18
 
     def draw(self):
-        Sprite.draw(self) # FIXME life bar is not draw
+        Sprite.draw(self)
 
-        x = self.x + 2
-        y = self.y + 2
+        x = self.x -10
+        y = self.y -2
         w = self.hit_points
         h = 4
         color = 2
         pyxel.rect(x, y, w, h, color)
         pyxel.rect(x+1, y+1, w-2, h-2, 8)
-        pyxel.rect(self.x+5, self.y+3, 3, 1, 7)
-        pyxel.rect(self.x+9, self.y+3, 1, 1, 7)
+        pyxel.rect(x+3, y+1, 3, 1, 7)
+        pyxel.rect(x+7, y+1, 1, 1, 7)
 
     def dec(self):
         self.hit_points = max(0, self.hit_points - 2)
