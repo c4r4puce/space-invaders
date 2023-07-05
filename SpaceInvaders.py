@@ -437,10 +437,13 @@ class Invader(Sprite):
                               8,                          # count
                               direction=TOP_TO_BOTTOM,
                               fps=6 )
+
+        half_width = int(animation.width / 2)
+        pos        = (randrange(half_width, pyxel.width - half_width), -animation.height)
         Sprite.__init__(self,
-                        1,                                   # depth
-                        (randrange(0, pyxel.width-16), -16), # pos
-                        1,                                   # speed
+                        1,           # depth
+                        pos,
+                        1,           # speed
                         animation)
         self.weapon = InvaderWeapon(self)
 
