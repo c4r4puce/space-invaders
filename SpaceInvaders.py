@@ -170,6 +170,8 @@ class Sprite:
     # To detect all collision scenario, you should call this function on both
     # sprites, i.e., foo.collide_with(bar) and bar.collide_with(foo).
     def collide_with(self, other_sprite):
+        if self.destroyed or other_sprite.destroyed:
+            return False
         return self.collide_with_rect(other_sprite.tlc(),
                                       other_sprite.width, other_sprite.height)
 
