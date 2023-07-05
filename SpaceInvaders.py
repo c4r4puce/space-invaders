@@ -734,6 +734,9 @@ class Rocket(Sprite):
     def shoot(self):
         self.weapon.fire()
 
+    def explode(self):
+        pass
+
 class Root:
 
     def singleton():
