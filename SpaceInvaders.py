@@ -73,7 +73,7 @@ class Animation:
             self.framey += self.height
 
     # Draw at the given top left corner.
-    def draw_at(self, tlc):
+    def draw_at(self, tlc):                 # FIXME life bar is not draw
         (x, y) = tlc
         pyxel.blt(x, y,                     # (x, y) destination
                   self.img,                 # numero image source
@@ -113,7 +113,7 @@ class Sprite:
         self.animation.draw_at( self.tlc() )
 
     def is_visible(self):
-        return self.y < pyxel.height and self.y + self.height >= 0
+        return self.y < pyxel.height + self.height/2 or self.y < 0 - self.height/2
 
     def is_done(self):
         return not self.animation.running
@@ -263,157 +263,31 @@ class SpriteManager:
                 for sprite in self.classes[cls]:
                     sprite.draw_debug_overlay()
 
-class Star(Sprite):
+class Projectile(Sprite):
 
-    def __init__(self):
-        star_animation = Animation(1,                        # img
-                                   8, 8,                     # width, height
-                                   randrange(0, 9) * 8, 16,  # origx, origy
-                                   1,                        # count
-                                   direction=TOP_TO_BOTTOM,
-                                   fps=10)
+    def __init__ (self, depth, animation, pos, speed, other_sprite):
         Sprite.__init__(self,
-                          0,                                 # depth
-                          (randrange(0, pyxel.width-8), -8), # pos
-                          randrange(2, 4),                   # speed
-                          star_animation)
+                        1,    # depth
+                        pos,
+                        speed,
+                        animation,
+                        other_sprite)
 
-class Invader(Sprite):
-
-    def __init__ (self):
-        animation = Animation(0,                          # img
-                              16, 16,                     # width, height
-                              randrange(0, 6)*16, 128,    # origx, origy
-                              8,                          # count
-                              direction=TOP_TO_BOTTOM,
-                              fps=6 )
-        Sprite.__init__(self,
-                        1,                                   # depth
-                        (randrange(0, pyxel.width-16), -16), # pos
-                        1,                                   # speed
-                        animation)
-
-    def explode(self):
-        assert not self.destroyed, "Already destroyed"
-        self.destroy()
-        SpriteManager.singleton().attach( InvaderExplosion(self) )
-
-    def update(self):
-        Sprite.update(self)
-
-        if self.destroyed:
-            return
-
-        # Do we collide with the rocket?
-        rocket = Rocket.singleton()
-        if self.collide_with(rocket) or rocket.collide_with(self):
-            self.explode()
-            LifeBar.singleton().dec()
-            if LifeBar.singleton().is_dead():
-                rocket.destroy()
-
-class InvaderExplosion(Sprite):
-
-    def __init__(self, invader):
-        animation = Animation(0,                       # img
-                              16, 16,                  # width, height
-                              0, randrange(3, 7)*16,   # origx, origy
-                              10,                      # count
-                              loop=False,
-                              fps = 3)
-        Sprite.__init__(self,
-                        1,                             # depth
-                        invader.pos(),                 # pos
-                        invader.speed,                 # speed
-                        animation)
-
-class UFO(Sprite):
-
-    def __init__ (self):
-        UFO_animation = Animation(1,                          # img
-                                  16, 16,                     # width, height
-                                  0, 24,                      # origx, origy
-                                  7,                          # count
-                                  fps=6 )
-        Sprite.__init__(self,
-                          1,                                  # depth
-                          (-16, 50),                          # pos
-                          3,                                  # speed
-                          UFO_animation)
-
-class LifeBar(Sprite):
-
-    def singleton():
-        global life_bar
-        if life_bar is None:
-            life_bar = LifeBar()
-        return life_bar
-
-    def __init__(self):
-        animation = Animation(1,           # img
-                              40, 16,      # width, height
-                              0, 0,        # origx, origy
-                              1)           # count
-        Sprite.__init__(self,
-                          3,               # depth
-                          (0, 0),          # pos
-                          0,               # speed
-                          animation)
-        self.hit_points = 18
-
-    def draw(self):
-        Sprite.draw(self)
-
-        x = self.x + 2
-        y = self.y + 2
-        w = self.hit_points
-        h = 4
-        color = 2
-        pyxel.rect(x, y, w, h, color)
-        pyxel.rect(x+1, y+1, w-2, h-2, 8)
-        pyxel.rect(self.x+5, self.y+3, 3, 1, 7)
-        pyxel.rect(self.x+9, self.y+3, 1, 1, 7)
-
-    def dec(self):
-        self.hit_points = max(0, self.hit_points - 2)
-
-    def inc(self):
-        self.hit_points = min(18, self.hit_points + 2)
-
-    def die_immediatly(self):
-        self.hit_points = 0
-
-    def is_dead(self):
-        return self.hit_points == 0
-
-class RocketProjectile(Sprite):
-
-    def __init__ (self):
-        animation = Animation(0,                          # img
-                              8, 8,                       # width, height
-                              0, 112,                     # origx, origy
-                              1,                          # count
-                              direction=TOP_TO_BOTTOM)
-        rocket = Rocket.singleton()
-        Sprite.__init__(self,
-                        1,                                # depth
-                        rocket.pos(),                     # pos
-                        -3,                               # speed
-                        animation)
-
-    def update(self):
-        Sprite.update(self)
-
-        if self.destroyed:
-            return
-
-        # Do we collide with an invader?
-        for invader in SpriteManager.singleton().get("Invader"):
-            if self.collide_with(invader) or invader.collide_with(self):
+    def handle_collision(self):
+        for other_sprite in SpriteManager.singleton().get("other_sprite"):
+            if self.collide_with(other_sprite) or other_sprite.collide_with(self):
                 self.destroy()
-                invader.explode()
+                other_sprite.explode()
 
-class RocketWeapon:
+    def update(self):
+        Sprite.update(self)
+
+        if self.destroyed:
+            return
+
+        self.handle_collision()
+
+class Weapon:
 
     def __init__(self, cooldown):
         self.cooldown_reload  = cooldown
@@ -429,11 +303,34 @@ class RocketWeapon:
     def ready(self):
         return self.cooldown_current == 0
 
+class RocketProjectile(Projectile):
+
+    def __init__(self):
+        animation = Animation(0,                          # img
+                              8, 8,                       # width, height
+                              0, 112,                     # origx, origy
+                              1)                          # count
+
+        Projectile.__init__(self,1, animation, Rocket.singleton().pos, -3, Invader() )
+
+    def update(self):
+        self.handle_collision(self)
+        Projectile.update()
+
+class RocketWeapon(Weapon):
+    def __init__(self, cooldown):
+        self.cooldown_reload  = cooldown
+        self.cooldown_current = 0
+        self.weapon = Weapon(10)
+
+    def update(self):
+        self.weapon.update()
+
     # Try to fire. Return True if fired, False otherwise.
     def fire(self):
         if not self.ready():
             return False
-        SpriteManager.singleton().attach( RocketProjectile() )
+      # SpriteManager.singleton().attach( RocketProjectile() )#FIXME problems with positional arguments
         self.reload()
         return True
 
@@ -497,6 +394,161 @@ class Rocket(Sprite):
 
     def shoot(self):
         self.weapon.fire()
+
+class InvaderProjectile(Projectile):
+
+    def __init__(self):
+        animation = Animation(0,                          # img
+                              8, 8,                       # width, height
+                              8, 112,                     # origx, origy
+                              1)                          # count
+        Projectile.__init__(self,1, animation, Invader.pos, 3, Rocket.singleton() )
+
+    def update(self):
+        self.handle_collision(self)
+        Projectile.update()
+
+class InvaderWeapon(Weapon):
+    def __init__(self, cooldown):
+        self.cooldown_reload  = cooldown
+        self.cooldown_current = 0
+        self.weapon = Weapon(20)
+
+    def update(self):
+        self.weapon.update()
+
+    # Try to fire. Return True if fired, False otherwise.
+    def fire(self):
+        if not self.ready():
+            return False
+      # SpriteManager.singleton().attach(InvaderProjectile(self) )#FIXME problems with positional arguments
+        self.reload()
+        return True
+
+class Invader(Sprite):
+
+    def __init__ (self):
+        animation = Animation(0,                          # img
+                              16, 16,                     # width, height
+                              randrange(0, 6)*16, 128,    # origx, origy
+                              8,                          # count
+                              direction=TOP_TO_BOTTOM,
+                              fps=6 )
+        Sprite.__init__(self,
+                        1,                                   # depth
+                        (randrange(0, pyxel.width-16), -16), # pos
+                        1,                                   # speed
+                        animation)
+        self.weapon = InvaderWeapon(20)
+
+    def explode(self):
+        assert not self.destroyed, "Already destroyed"
+        self.destroy()
+      # SpriteManager.singleton().attach(InvaderExplosion(self) )#FIXME problems with positional arguments
+
+    def update(self):
+        Sprite.update(self)
+        self.weapon.update()
+        if self.destroyed:
+            return
+        self.weapon.fire()
+
+        # Do we collide with the rocket?
+        rocket = Rocket.singleton()
+        if self.collide_with(rocket) or rocket.collide_with(self):
+            self.explode()
+            LifeBar.singleton().dec()
+            if LifeBar.singleton().is_dead():
+                rocket.destroy()
+
+class InvaderExplosion(Sprite):
+
+    def __init__(self, invader):
+        animation = Animation(0,                       # img
+                              16, 16,                  # width, height
+                              0, randrange(3, 7)*16,   # origx, origy
+                              10,                      # count
+                              loop=False,
+                              fps = 3)
+        Sprite.__init__(self,
+                        1,                             # depth
+                        invader.pos(),                 # pos
+                        invader.speed,                 # speed
+                        animation)
+
+class UFO(Sprite):
+
+    def __init__ (self):
+        UFO_animation = Animation(1,                          # img
+                                  16, 16,                     # width, height
+                                  0, 24,                      # origx, origy
+                                  7,                          # count
+                                  fps=6 )
+        Sprite.__init__(self,
+                          1,                                  # depth
+                          (-16, 50),                          # pos
+                          3,                                  # speed
+                          UFO_animation)
+
+class Star(Sprite):
+
+    def __init__(self):
+        star_animation = Animation(1,                        # img
+                                   8, 8,                     # width, height
+                                   randrange(0, 9) * 8, 16,  # origx, origy
+                                   1,                        # count
+                                   direction=TOP_TO_BOTTOM,
+                                   fps=10)
+        Sprite.__init__(self,
+                          0,                                 # depth
+                          (randrange(0, pyxel.width-8), -8), # pos
+                          randrange(2, 4),                   # speed
+                          star_animation)
+
+class LifeBar(Sprite):
+
+    def singleton():
+        global life_bar
+        if life_bar is None:
+            life_bar = LifeBar()
+        return life_bar
+
+    def __init__(self):
+        animation = Animation(1,           # img
+                              40, 8,       # width, height
+                              0, 0,        # origx, origy
+                              1)           # count
+        Sprite.__init__(self,
+                          3,               # depth
+                          (0, 0),          # pos
+                          0,               # speed
+                          animation)
+        self.hit_points = 18
+
+    def draw(self):
+        Sprite.draw(self) # FIXME life bar is not draw
+
+        x = self.x + 2
+        y = self.y + 2
+        w = self.hit_points
+        h = 4
+        color = 2
+        pyxel.rect(x, y, w, h, color)
+        pyxel.rect(x+1, y+1, w-2, h-2, 8)
+        pyxel.rect(self.x+5, self.y+3, 3, 1, 7)
+        pyxel.rect(self.x+9, self.y+3, 1, 1, 7)
+
+    def dec(self):
+        self.hit_points = max(0, self.hit_points - 2)
+
+    def inc(self):
+        self.hit_points = min(18, self.hit_points + 2)
+
+    def die_immediatly(self):
+        self.hit_points = 0
+
+    def is_dead(self):
+        return self.hit_points == 0
 
 class Root:
 
