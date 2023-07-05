@@ -9,9 +9,10 @@ LEFT_TO_RIGHT = 0
 TOP_TO_BOTTOM = 1
 
 # Singletons:
-life_bar = None
-rocket   = None
-root     = None
+life_bar       = None
+rocket         = None
+root           = None
+sprite_manager = None
 
 class Animation:
 
@@ -148,8 +149,102 @@ class Sprite:
 
     def destroy(self):
         if not self.destroyed:
-            Root.singleton().remove_sprite(self)
+            SpriteManager.singleton().detach(self)
             self.destroyed = True
+
+class SpriteManager:
+
+    def singleton():
+        global sprite_manager
+        if sprite_manager is None:
+            sprite_manager = SpriteManager()
+        return sprite_manager
+
+    def __init__(self):
+        global sprite_manager
+        assert sprite_manager is None, "Singleton pattern violation"
+
+        # Sprites sorted by depth:
+        # [0] Star
+        # [1] Invader, InvaderExplosion, UFO, RocketProjectile
+        # [2] Rocket
+        # [3] LifeBar
+        self.plans = [[], [], [], []]
+
+        # Sprites sorted by class:
+        self.classes = {}
+
+        self.frequencies = {}
+
+    def attach(self, sprite):
+        self.plans[sprite.depth].append(sprite)
+
+        cls = type(sprite).__name__
+        if cls in self.classes:
+            self.classes[cls].append(sprite)
+        else:
+            self.classes[cls] = [sprite]
+
+    def detach(self, sprite):
+        self.plans[sprite.depth].remove(sprite)
+        cls = type(sprite).__name__
+        self.classes[cls].remove(sprite)
+
+    def get(self, cls):
+        if cls in self.classes:
+            sprites = self.classes[cls]
+        else:
+            sprites = []
+        return sprites
+
+    def spawn(self, cls, freq):
+        if freq in self.frequencies:
+            self.frequencies[freq].append(cls)
+        else:
+            self.frequencies[freq] = [cls]
+
+    def update(self):
+
+        # Update sprites, destroying them when necessary.
+        for depth in range(0, len(self.plans)):
+            for sprite in self.plans[depth]:
+                sprite.update()
+
+                # Destroy the sprite if:
+                # - it left the screen
+                # - or it's animation is done.
+                if not sprite.is_visible() or sprite.is_done():
+                    if Root.singleton().debug_mode:
+                        print(f"is_visible: {sprite.is_visible()}")
+                        print(f"is_done:    {sprite.is_done()}")
+                    sprite.destroy()
+
+        # Auto-spawn sprites.
+        for freq, classes in self.frequencies.items():
+            if pyxel.frame_count % freq != 0:
+                continue
+            if Root.singleton().debug_mode:
+                print(f"Will spawn: {classes}")
+            for cls in classes:
+                self.attach( cls() )
+
+        if Root.singleton().debug_mode:
+            print(f"Sprite Plans:")
+            for depth in range( len(self.plans) ):
+                print(f"    [{depth}] {len(self.plans[depth])}")
+            print(f"Sprite Classes:")
+            for cls, sprites in self.classes.items():
+                print(f"    {cls}: {len(sprites)}")
+
+    def draw(self):
+        for sprites in self.plans:
+            for sprite in sprites:
+                sprite.draw()
+
+        if Root.singleton().debug_mode:
+            for depth in range(0, len(self.plans)):
+                for sprite in self.plans[depth]:
+                    sprite.debug_draw_collision_data()
 
 class Star(Sprite):
 
@@ -182,10 +277,9 @@ class Invader(Sprite):
                           invader_animation)
 
     def explode(self):
-        if self.destroyed:
-            return
+        assert not self.destroyed, "Already destroyed"
         self.destroy()
-        Root.singleton().add_sprite( InvaderExplosion(self) )
+        SpriteManager.singleton().attach( InvaderExplosion(self) )
 
     def update(self):
         Sprite.update(self)
@@ -301,7 +395,7 @@ class RocketProjectile(Sprite):
             return
 
         # Do we collide with an invader?
-        for invader in Root.singleton().get_sprites("Invader"):
+        for invader in SpriteManager.singleton().get("Invader"):
             if self.collide_with(invader) or invader.collide_with(self):
                 self.destroy()
                 invader.explode()
@@ -326,11 +420,7 @@ class RocketWeapon:
         return self.cooldown_current == 0
 
     def fire(self):
-        if not self.ready():
-            return False
-        Root.singleton().add_sprite( RocketProjectile() )
-        self.reload()
-        return True
+        SpriteManager.singleton().attach( RocketProjectile() )
 
 class Rocket(Sprite):
 
@@ -342,8 +432,7 @@ class Rocket(Sprite):
 
     def __init__(self):
         global rocket
-        if rocket is not None:
-            raise AssertionError("singleton pattern violation")
+        assert rocket is None, "Singleton pattern violation"
 
         self.normal_speed = Animation(0,         # img
                                       16, 16,    # width, height
@@ -397,24 +486,6 @@ class Rocket(Sprite):
     def debug_draw_collision_data(self):
         pyxel.rectb(self.x, self.y, self.width, self.height, 6)
 
-class SpriteGenerator:
-
-    def __init__(self):
-        self.frequencies = {}
-
-    def add(self, sprite_class, freq):
-        if freq in self.frequencies:
-            self.frequencies[freq].append(sprite_class)
-        else:
-            self.frequencies[freq] = [sprite_class]
-
-    def generate(self):
-        for freq, sprite_classes in self.frequencies.items():
-            if pyxel.frame_count % freq != 0:
-                continue
-            for sprite_class in sprite_classes:
-                Root.singleton().add_sprite( sprite_class() )
-
 class Root:
 
     def singleton():
@@ -425,66 +496,24 @@ class Root:
 
     def __init__(self):
         global root
-        if root is not None:
-            raise AssertionError("singleton pattern violation")
+        assert root is None, "Singleton pattern violation"
 
-        self.fps = 30
+        self.debug_mode = False
+        self.fps        = 30
+        self.paused     = False
+
+    def init(self):
         pyxel.init(160, 120, fps=self.fps)
         pyxel.load("space-invaders.pyxres")
 
-        self.ufos   = []
-        self.paused = False
-
-        self.generator = SpriteGenerator()
-        self.generator.add(Invader, 60)
-        self.generator.add(Star,    1)
-
-        # Sprites sorted by depth:
-        # [0] Stars
-        # [1] Invader explosions
-        # [2] Rocket
-        # [3] HUD
-        self.sprite_plans = [[], [], [], []]
-
-        # Sprites sorted by class:
-        self.sprite_classes = {}
-
-        self.add_sprite( Rocket.singleton() )
-        self.add_sprite( LifeBar.singleton() )
-
-        self.debug_mode = False
+        manager = SpriteManager.singleton()
+        manager.spawn(Invader, 60)
+        manager.spawn(Star,    1)
+        manager.attach( Rocket.singleton() )
+        manager.attach( LifeBar.singleton() )
 
     def run(self):
         pyxel.run(self.update, self.draw)
-
-    def add_sprite(self, sprite):
-        self.sprite_plans[sprite.depth].append(sprite)
-
-        sprite_class = type(sprite).__name__
-        if sprite_class in self.sprite_classes:
-            self.sprite_classes[sprite_class].append(sprite)
-        else:
-            self.sprite_classes[sprite_class] = [sprite]
-
-    def remove_sprite(self, sprite):
-        self.sprite_plans[sprite.depth].remove(sprite)
-        sprite_class = type(sprite).__name__
-        self.sprite_classes[sprite_class].remove(sprite)
-
-    def get_sprites(self, sprite_class):
-        if sprite_class in self.sprite_classes:
-            sprites = self.sprite_classes[sprite_class]
-        else:
-            sprites = []
-        return sprites
-
-    def add_ufo(self, ufo):
-        self.add_drawable(ufo)
-        self.ufos.append(ufo)
-
-    def remove_ufo(self, ufo):
-        self.remove_drawable(ufo)
-        self.ufos.remove(ufo)
 
     def is_game_over(self):
         return LifeBar.singleton().is_dead()
@@ -503,28 +532,10 @@ class Root:
             else:
                 print("Debug Mode: disabled.")
 
-        if self.debug_mode:
-            print(f"Sprite Plans:")
-            for depth in range( len(self.sprite_plans) ):
-                print(f"    [{depth}] {len(self.sprite_plans[depth])}")
-            print(f"Sprite Classes:")
-            for cls, sprites in self.sprite_classes.items():
-                print(f"    {cls}: {len(sprites)}")
-
         if self.paused:
             return
 
-        for depth in range(0, len(self.sprite_plans)):
-            for sprite in self.sprite_plans[depth]:
-                sprite.update()
-
-                # Destroy the sprite if:
-                # - it left the screen
-                # - or it's animation is done.
-                if not sprite.is_visible() or sprite.is_done():
-                    sprite.destroy()
-
-        self.generator.generate()
+        SpriteManager.singleton().update()
 
         if self.is_game_over():
             return
@@ -541,20 +552,14 @@ class Root:
 
     def draw(self):
         pyxel.cls(0)
-        for sprites in self.sprite_plans:
-            for sprite in sprites:
-                sprite.draw()
-
-        if self.debug_mode:
-            for depth in range(0, len(self.sprite_plans)):
-                for sprite in self.sprite_plans[depth]:
-                    sprite.debug_draw_collision_data()
-
+        SpriteManager.singleton().draw()
         self.draw_game_over()
         self.draw_paused()
 
 def main():
-    Root.singleton().run()
+    root = Root.singleton()
+    root.init()
+    root.run()
 
 def pause():
     Root.singleton().paused = True
