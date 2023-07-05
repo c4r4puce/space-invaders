@@ -14,6 +14,13 @@ rocket         = None
 root           = None
 sprite_manager = None
 
+# An animation is a list of COUNT frames of WIDTH x HEIGHT pixels each taken
+# from the image IMG starting at (ORIGX, ORIGY) following the given DIRECTION.
+#
+# A loop animation (LOOP set to True) is an animation that keeps repeating
+# itself, i.e., that won't stop by itself.
+#
+# The animation speed is described by its FPS, i.e., frames per seconds.
 class Animation:
 
     def __init__(self,
@@ -72,7 +79,7 @@ class Animation:
         else: # self.direction == TOP_TO_BOTTOM
             self.framey += self.height
 
-    # Draw at the given top left corner.
+    # Draw at the given top left corner's coordinates.
     def draw_at(self, tlc):
         (x, y) = tlc
         pyxel.blt(x, y,                     # (x, y) destination
@@ -81,6 +88,18 @@ class Animation:
                   self.width, self.height,  # (largeur, hauteur) source et destination
                   0)                        # couleur transparente
 
+# A sprite is an animated object moving around on the screen. It can collide
+# with other sprites.
+#
+# A sprite have a DEPTH to help decide which sprite to draw on top of the other.
+#
+# The position (POS) of a sprite is the (x, y) coordinates of its center. While
+# it's TLC is the (x, y) coordinates of its top left corner. TLC is used to draw
+# of its animation.
+#
+# Movement is described by its SPEED and is limited to vertical movements only.
+# A positive speed means the sprite is moving from top to bottom. A negative one
+# means moving from bottom to top.
 class Sprite:
 
     def __init__(self, depth, pos, speed, animation):
@@ -112,9 +131,11 @@ class Sprite:
     def draw(self):
         self.animation.draw_at( self.tlc() )
 
+    # Tell if the sprite can be found somewhere on the screen.
     def is_visible(self):
         return self.y < pyxel.height and self.y + self.height >= 0
 
+    # Tell if sprite's animation is still running.
     def is_done(self):
         return not self.animation.running
 
@@ -144,10 +165,17 @@ class Sprite:
             or self.collide_with_rect_3(tlc, width, height) \
             or self.collide_with_rect_4(tlc, width, height)
 
+    # Tell if the current sprite collide with the other one.
+    #
+    # To detect all collision scenario, you should call this function on both
+    # sprites, i.e., foo.collide_with(bar) and bar.collide_with(foo).
     def collide_with(self, other_sprite):
         return self.collide_with_rect(other_sprite.tlc(),
                                       other_sprite.width, other_sprite.height)
 
+    # Draw sprite's debug overlay.
+    #
+    # It show its collision box and its center.
     def draw_debug_overlay(self):
         color = 8
 
@@ -167,6 +195,17 @@ class Sprite:
             SpriteManager.singleton().detach(self)
             self.destroyed = True
 
+# Help manage sprites.
+#
+# Once a sprite is attached to the manager, it start being automatically updated
+# and drawn. Its destruction is also automatically triggered when it leaves the
+# screen or its animation is over.
+#
+# Sprites are sorted by depth and classes. Use get() to retrieve all the sprites
+# from a given class.
+#
+# The manager also provide automatic sprite generation at a given frequency via
+# spawn().
 class SpriteManager:
 
     def singleton():
@@ -212,12 +251,18 @@ class SpriteManager:
             sprites = []
         return sprites
 
+    # Tell the manager to spawn a new sprite with the CLS class every FREQ
+    # frames.
     def spawn(self, cls, freq):
         if freq in self.frequencies:
             self.frequencies[freq].append(cls)
         else:
             self.frequencies[freq] = [cls]
 
+    # Update the sprites under manager's control taking care to destroy them if
+    # necessary.
+    #
+    # Also spawn new sprites if necessary.
     def update(self):
 
         # Update sprites, destroying them when necessary.
@@ -251,6 +296,7 @@ class SpriteManager:
             for cls, sprites in self.classes.items():
                 print(f"    {cls}: {len(sprites)}")
 
+    # Draw the sprites under manager's control taking into account their depth.
     def draw(self):
         for sprites in self.plans:
             for sprite in sprites:
@@ -278,6 +324,7 @@ class Star(Sprite):
                           randrange(2, 4),                   # speed
                           star_animation)
 
+# An invader is a sprite that can collide with the rocket.
 class Invader(Sprite):
 
     def __init__ (self):
@@ -341,6 +388,7 @@ class UFO(Sprite):
                           3,                                  # speed
                           UFO_animation)
 
+# Draw rocket's remaining hit points.
 class LifeBar(Sprite):
 
     def singleton():
