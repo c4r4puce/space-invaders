@@ -416,14 +416,19 @@ class RocketProjectile(Sprite):
 class RocketWeapon:
 
     def __init__(self, cooldown):
-        self.cooldown = cooldown
-        self.can_fire = True
+        self.cooldown_reload  = cooldown
+        self.cooldown_current = 0
 
-    # FIXME Not Implemented
     def update(self):
-        pass
+        if self.cooldown_current > 0:
+            self.cooldown_current -= 1
 
-    # FIXME Not completly implemented
+    def reload(self):
+        self.cooldown_current = self.cooldown_reload
+
+    def ready(self):
+        return self.cooldown_current == 0
+
     def fire(self):
         SpriteManager.singleton().attach( RocketProjectile() )
 
