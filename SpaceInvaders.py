@@ -133,8 +133,9 @@ class Sprite:
 
     # Tell if the sprite can be found somewhere on the screen.
     def is_visible(self):
-        return self.y < pyxel.height and self.y + self.height >= 0
-
+        hh = self.height / 2
+        return self.y < pyxel.height + hh or self.y < -hh
+    
     # Tell if sprite's animation is still running.
     def is_done(self):
         return not self.animation.running
@@ -314,19 +315,26 @@ class SpriteManager:
 class Star(Sprite):
 
     def __init__(self):
-        star_animation = Animation(1,                        # img
-                                   8, 8,                     # width, height
-                                   randrange(0, 9) * 8, 16,  # origx, origy
-                                   1,                        # count
-                                   direction=TOP_TO_BOTTOM,
-                                   fps=10)
+        animation = Animation(1,                        # img
+                              8, 8,                     # width, height
+                              randrange(0, 9) * 8, 16,  # origx, origy
+                              1,                        # count
+                              direction=TOP_TO_BOTTOM,
+                              fps=10)
         Sprite.__init__(self,
                         0,                                 # depth
                         (randrange(0, pyxel.width-8), -8), # pos
                         randrange(2, 4),                   # speed
-                        star_animation)
+                        animation)
 
 class Projectile(Sprite):
+
+    def __init__(self, depth, pos, speed, animation):
+        Sprite.__init__(self,
+                        1,    # depth
+                        pos,
+                        speed,
+                        animation)      
 
     def handle_collision(self):
         pass
@@ -494,11 +502,14 @@ class Invader(Sprite):
                               8,                          # count
                               direction=TOP_TO_BOTTOM,
                               fps=6 )
+        hw  = int(animation.width / 2)
+        pos = (randrange(hw, pyxel.width - hw), -animation.height)
         Sprite.__init__(self,
                         1,                                   # depth
-                        (randrange(0, pyxel.width-16), -16), # pos
+                        pos,
                         1,                                   # speed
                         animation)
+        self.weapon = InvaderWeapon(self)
 
     def explode(self):
         assert not self.destroyed, "Already destroyed"
@@ -508,8 +519,10 @@ class Invader(Sprite):
     def update(self):
         Sprite.update(self)
 
+        self.weapon.update()
         if self.destroyed:
             return
+        self.weapon.fire()
 
         # Do we collide with the rocket?
         rocket = Rocket.singleton()
