@@ -499,26 +499,25 @@ class Rocket(Sprite):
         global rocket
         assert rocket is None, "Singleton pattern violation"
 
-        self.normal_speed = Animation(0,         # img
-                                      16, 16,    # width, height
-                                      0, 0,      # origx, origy
-                                      4)         # count
-        self.left_speed = Animation(0,           # img
-                                      16, 16,    # width, height
-                                      0, 16,     # origx, origy
-                                      4)         # count
-        self.right_speed = Animation(0,          # img
-                                      16, 16,    # width, height
-                                      0, 32,     # origx, origy
-                                      4)         # count
+        self.normal_animation = Animation(0,         # img
+                                          16, 16,    # width, height
+                                          0, 0,      # origx, origy
+                                          4)         # count
+        self.left_animation = Animation(0,           # img
+                                        16, 16,      # width, height
+                                        0, 16,       # origx, origy
+                                        4)           # count
+        self.right_animation = Animation(0,          # img
+                                         16, 16,     # width, height
+                                         0, 32,      # origx, origy
+                                         4)          # count
         Sprite.__init__(self,
                         2,                                           # depth
                         ((pyxel.width / 2) - 8, pyxel.height - 16),  # pos
                         0,                                           # speed
-                        self.normal_speed)
-        self.rocket_speed = 1.5
-
-        self.weapon = RocketWeapon(10)
+                        self.normal_animation)
+        self.horizontal_speed = 1.5
+        self.weapon           = RocketWeapon(10)
 
     def update(self):
         if pyxel.btn(pyxel.KEY_LEFT):
@@ -526,7 +525,7 @@ class Rocket(Sprite):
         elif pyxel.btn(pyxel.KEY_RIGHT):
             self.right()
         else:
-            self.animation = self.normal_speed
+            self.animation = self.normal_animation
 
         if pyxel.btn(pyxel.KEY_UP):
             self.shoot()
@@ -536,14 +535,14 @@ class Rocket(Sprite):
         Sprite.update(self)
 
     def left(self):
-        if self.x - self.rocket_speed >= 0:
-            self.x -= self.rocket_speed
-            self.animation = self.left_speed
+        if self.x - self.horizontal_speed >= 0:
+            self.x -= self.horizontal_speed
+        self.animation = self.left_animation
 
     def right(self):
-        if self.x + self.rocket_speed <= pyxel.width - self.width:
-            self.x += self.rocket_speed
-            self.animation = self.right_speed
+        if self.x + self.horizontal_speed <= pyxel.width - self.width:
+            self.x += self.horizontal_speed
+            self.animation = self.right_animation
 
     def shoot(self):
         self.weapon.fire()
