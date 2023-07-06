@@ -135,7 +135,7 @@ class Sprite:
     def is_visible(self):
         hh = self.height / 2
         return self.y < pyxel.height + hh or self.y < -hh
-    
+
     # Tell if sprite's animation is still running.
     def is_done(self):
         return not self.animation.running
@@ -194,9 +194,14 @@ class Sprite:
         pyxel.pset(self.x + 1, self.y,     color)
 
     def destroy(self):
-        if not self.destroyed:
-            SpriteManager.singleton().detach(self)
-            self.destroyed = True
+        assert not self.destroyed, "Already destroyed"
+        SpriteManager.singleton().detach(self)
+        self.destroyed = True
+
+    # What to do when another sprite hit this one?
+    def hit_by(self, sprite):
+        self.destroy()
+
 
 # Help manage sprites.
 #
@@ -334,7 +339,7 @@ class Projectile(Sprite):
                         1,    # depth
                         pos,
                         speed,
-                        animation)      
+                        animation)
 
     def handle_collision(self):
         pass
@@ -359,8 +364,8 @@ class RocketProjectile(Projectile):
     def handle_collision(self):
         for invader in SpriteManager.singleton().get("Invader"):
             if self.collide_with(invader) or invader.collide_with(self):
-                self.destroy()
-                invader.explode()
+                self.hit_by(invader)
+                invader.hit_by(self)
 
 class InvaderProjectile(Projectile):
 
@@ -374,9 +379,8 @@ class InvaderProjectile(Projectile):
     def handle_collision(self):
         rocket = Rocket.singleton()
         if self.collide_with(rocket) or rocket.collide_with(self):
-            self.destroy()
-            rocket.explode()
-            #rocket.hit(self)
+            self.hit_by(rocket)
+            rocket.hit_by(self)
 
 class Weapon:
 
@@ -406,7 +410,7 @@ class Weapon:
         return True
 
 class RocketWeapon(Weapon):
-    
+
     def __init__(self):
         Weapon.__init__(self, 10)
 
@@ -414,7 +418,7 @@ class RocketWeapon(Weapon):
         return RocketProjectile()
 
 class InvaderWeapon(Weapon):
-    
+
     def __init__(self, invader):
         Weapon.__init__(self, 100)
         self.invader = invader
@@ -483,14 +487,11 @@ class Rocket(Sprite):
     def shoot(self):
         self.weapon.fire()
 
-    def explode(self):
+    def hit_by(self, sprite):
         LifeBar.singleton().dec()
         if LifeBar.singleton().is_dead():
             self.destroy()
             SpriteManager.singleton().attach( InvaderExplosion(self) )
-
-#    def hit(self):
-#        pass
 
 # An invader is a sprite that can collide with the rocket.
 class Invader(Sprite):
@@ -511,26 +512,23 @@ class Invader(Sprite):
                         animation)
         self.weapon = InvaderWeapon(self)
 
-    def explode(self):
-        assert not self.destroyed, "Already destroyed"
-        self.destroy()
+    def destroy(self):
+        Sprite.destroy(self)
         SpriteManager.singleton().attach( InvaderExplosion(self) )
 
     def update(self):
         Sprite.update(self)
-
         self.weapon.update()
         if self.destroyed:
             return
+
         self.weapon.fire()
 
         # Do we collide with the rocket?
         rocket = Rocket.singleton()
         if self.collide_with(rocket) or rocket.collide_with(self):
-            self.explode()
-            LifeBar.singleton().dec()
-            if LifeBar.singleton().is_dead():
-                rocket.destroy()
+            self.hit_by(rocket)
+            rocket.hit_by(self)
 
 class InvaderExplosion(Sprite):
 
@@ -647,8 +645,8 @@ class RocketProjectile(Sprite):
         # Do we collide with an invader?
         for invader in SpriteManager.singleton().get("Invader"):
             if self.collide_with(invader) or invader.collide_with(self):
-                self.destroy()
-                invader.explode()
+                self.hit_by(invader)
+                invader.hit_by(self)
 
 class RocketWeapon:
 
@@ -734,8 +732,11 @@ class Rocket(Sprite):
     def shoot(self):
         self.weapon.fire()
 
-    def explode(self):
-        pass
+    def hit_by(self, sprite):
+        LifeBar.singleton().dec()
+        if LifeBar.singleton().is_dead():
+            self.destroy()
+            SpriteManager.singleton().attach( RocketExplosion() )
 
 class Root:
 
