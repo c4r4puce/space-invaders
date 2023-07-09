@@ -814,8 +814,6 @@ def main():
     root.init()
     root.run()
 
-def pause():
-    Root.singleton().paused = True
 
 if __name__ == "__main__":
     main()
