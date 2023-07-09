@@ -25,7 +25,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/c4r4puce/space-invaders/issues"
 
 [project.scripts]
-space-invaders = "spaceinvaders.SpaceInvaders:main"
+space-invaders = "spaceinvaders.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
