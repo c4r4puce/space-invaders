@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
+
 import pyxel
 from random import randrange
+
+from spaceinvaders import LOGGER_NAME
+
+
+logger = logging.getLogger(LOGGER_NAME)
 
 # Animation Directions:
 LEFT_TO_RIGHT = 0
@@ -282,27 +289,25 @@ class SpriteManager:
                 # - it left the screen
                 # - or it's animation is done.
                 if not sprite.is_visible() or sprite.is_done():
-                    if Root.singleton().debug_mode:
-                        print(f"is_visible: {sprite.is_visible()}")
-                        print(f"is_done:    {sprite.is_done()}")
+                    logger.debug(f"is_visible: {sprite.is_visible()}")
+                    logger.debug(f"is_done:    {sprite.is_done()}")
                     sprite.destroy()
 
         # Auto-spawn sprites.
         for freq, classes in self.frequencies.items():
             if pyxel.frame_count % freq != 0:
                 continue
-            if Root.singleton().debug_mode:
-                print(f"Will spawn: {classes}")
+            logger.debug(f"Will spawn: {classes}")
             for cls in classes:
                 self.attach( cls() )
 
-        if Root.singleton().debug_mode:
-            print(f"Sprite Plans:")
-            for depth in range( len(self.plans) ):
-                print(f"    [{depth}] {len(self.plans[depth])}")
-            print(f"Sprite Classes:")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Sprite Plans:")
+            for depth in range(len(self.plans)):
+                logger.debug(f"    [{depth}] {len(self.plans[depth])}")
+            logger.debug("Sprite Classes:")
             for cls, sprites in self.classes.items():
-                print(f"    {cls}: {len(sprites)}")
+                logger.debug(f"    {cls}: {len(sprites)}")
 
     # Draw the sprites under manager's control taking into account their depth.
     def draw(self):
@@ -310,7 +315,7 @@ class SpriteManager:
             for sprite in sprites:
                 sprite.draw()
 
-        if Root.singleton().debug_mode:
+        if logger.isEnabledFor(logging.DEBUG):
             for cls in ["Invader", "Rocket", "RocketProjectile"]:
                 if cls not in self.classes:
                     continue
@@ -778,11 +783,12 @@ class Root:
 
         # Toggle debug mode.
         if pyxel.btnp(pyxel.KEY_F1):
-            self.debug_mode = not self.debug_mode
-            if self.debug_mode:
-                print("Debug Mode: enabled.")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.setLevel(logging.INFO)
+                logger.info("Debug Mode: disabled.")
             else:
-                print("Debug Mode: disabled.")
+                logger.setLevel(logging.DEBUG)
+                logger.info("Debug Mode: enabled.")
 
         # Toggle pause mode.
         if pyxel.btnp(pyxel.KEY_F2):
