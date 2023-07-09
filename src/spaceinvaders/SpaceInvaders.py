@@ -756,7 +756,7 @@ class Root:
 
     def init(self):
         pyxel.init(160, 120, fps=self.fps)
-        pyxel.load("space-invaders.pyxres")
+        pyxel.load("graphics/space-invaders.pyxres")
 
         manager = SpriteManager.singleton()
         manager.spawn(Invader, 60)

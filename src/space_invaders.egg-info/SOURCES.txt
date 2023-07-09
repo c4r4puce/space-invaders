@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/space_invaders.egg-info/PKG-INFO
+src/space_invaders.egg-info/SOURCES.txt
+src/space_invaders.egg-info/dependency_links.txt
+src/space_invaders.egg-info/entry_points.txt
+src/space_invaders.egg-info/requires.txt
+src/space_invaders.egg-info/top_level.txt
+src/spaceinvaders/SpaceInvaders.py
+src/spaceinvaders/graphics/space-invaders.pyxres
