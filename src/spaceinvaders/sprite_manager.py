@@ -73,8 +73,8 @@ class SpriteManager(metaclass=MetaSingleton):
 
         """
         # Update sprites, destroying them when necessary.
-        for depth in range(0, len(self.plans)):
-            for sprite in self.plans[depth]:
+        for plan in self.plans:
+            for sprite in plan:
                 sprite.update()
 
                 # Destroy the sprite if:
@@ -91,12 +91,12 @@ class SpriteManager(metaclass=MetaSingleton):
                 continue
             logger.debug("Will spawn: %s", classes)
             for cls in classes:
-                self.attach( cls() )
+                self.attach(cls())
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Sprite Plans:")
-            for depth in range(len(self.plans)):
-                logger.debug("    [%s] %s", depth, len(self.plans[depth]))
+            for depth, plan in enumerate(self.plans):
+                logger.debug("    [%s] %s", depth, len(plan))
             logger.debug("Sprite Classes:")
             for cls, sprites in self.classes.items():
                 logger.debug("    %s: %s", cls, len(sprites))
