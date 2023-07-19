@@ -81,25 +81,25 @@ class SpriteManager(metaclass=MetaSingleton):
                 # - it left the screen
                 # - or it's animation is done.
                 if not sprite.is_visible() or sprite.is_done():
-                    logger.debug(f"is_visible: {sprite.is_visible()}")
-                    logger.debug(f"is_done:    {sprite.is_done()}")
+                    logger.debug("is_visible: %s", sprite.is_visible())
+                    logger.debug("is_done:    %s", sprite.is_done())
                     sprite.destroy()
 
         # Auto-spawn sprites.
         for freq, classes in self.frequencies.items():
             if pyxel.frame_count % freq != 0:
                 continue
-            logger.debug(f"Will spawn: {classes}")
+            logger.debug("Will spawn: %s", classes)
             for cls in classes:
                 self.attach( cls() )
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Sprite Plans:")
             for depth in range(len(self.plans)):
-                logger.debug(f"    [{depth}] {len(self.plans[depth])}")
+                logger.debug("    [%s] %s", depth, len(self.plans[depth]))
             logger.debug("Sprite Classes:")
             for cls, sprites in self.classes.items():
-                logger.debug(f"    {cls}: {len(sprites)}")
+                logger.debug("    %s: %s", cls, len(sprites))
 
     def draw(self):
         """Draw the sprites under manager's control taking into account their depth."""
