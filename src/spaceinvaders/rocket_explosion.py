@@ -15,6 +15,6 @@ class RocketExplosion(Sprite):
                               fps=10)
         Sprite.__init__(self,
                         1,                             # depth
-                        Rocket().pos(),      # pos
-                        Rocket().speed,      # speed
+                        Rocket().pos.copy(),
+                        Rocket().speed.copy(),
                         animation)

@@ -2,6 +2,7 @@
 import pyxel
 
 from spaceinvaders.sprite_manager import SpriteManager
+from spaceinvaders.vector         import Vector
 
 
 class Sprite:
@@ -17,19 +18,20 @@ class Sprite:
 
     """
 
-    def __init__(self, depth, pos, speed, animation):
-        self.animation = animation
-        self.depth = depth
-        self.destroyed = False
-        self.height = animation.height
-        self.img = animation.img
-        self.speed = speed
-        self.width = animation.width
-        (self.x, self.y) = pos
+    def __init__(self, depth, pos: Vector, speed: Vector, animation):
+        assert isinstance(pos,   Vector), "pos must be a Vector"
+        assert isinstance(speed, Vector), "speed must be a Vector"
 
-    def pos(self):
-        """Center's coordinates."""
-        return self.x, self.y
+        self.animation = animation
+        self.depth     = depth
+        self.destroyed = False
+        self.height    = animation.height
+        self.img       = animation.img
+        self.speed     = speed
+        self.width     = animation.width
+
+        self.pos         = pos
+        (self.x, self.y) = self.pos.to_tuple() # Retro compatibility
 
     def tlc(self):
         """Top left corner's coordinates."""
@@ -39,10 +41,16 @@ class Sprite:
     def update_frame(self):
         self.animation.next_frame()
 
+    def teleport(self, v):
+        """Teleport the sprite along vector V."""
+        self.pos.add(v)
+        (self.x, self.y) = self.pos.to_tuple() # Retro compatibility
+
     def update(self):
         """Update position"""
+        assert isinstance(self.speed, Vector), "self.speed must be a Vector"
         self.update_frame()
-        self.y += self.speed
+        self.teleport(self.speed)
 
     def draw(self):
         self.animation.draw_at(self.tlc())

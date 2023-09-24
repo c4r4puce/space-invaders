@@ -14,6 +14,6 @@ class InvaderExplosion(Sprite):
                               loop=False,
                               fps=3)
         super().__init__(1,                             # depth
-                        invader.pos(),                 # pos
-                        invader.speed,                 # speed
-                        animation)
+                         invader.pos.copy(),
+                         invader.speed.copy(),
+                         animation)

@@ -3,8 +3,10 @@ from random import randrange
 
 import pyxel
 
-from spaceinvaders.animation import Animation, TOP_TO_BOTTOM
-from spaceinvaders.sprite import Sprite
+from spaceinvaders.animation      import Animation, TOP_TO_BOTTOM
+from spaceinvaders.sprite         import Sprite
+from spaceinvaders.vector         import Vector
+from spaceinvaders.vertical_speed import VerticalSpeed
 
 
 class Star(Sprite):
@@ -16,7 +18,7 @@ class Star(Sprite):
                               1,                        # count
                               direction=TOP_TO_BOTTOM,
                               fps=10)
-        super().__init__(0,                                 # depth
-                        (randrange(0, pyxel.width-8), -8), # pos
-                        randrange(2, 4),                   # speed
+        super().__init__(0,                                      # depth
+                        Vector(randrange(0, pyxel.width-8), -8), # pos
+                        VerticalSpeed(float(randrange(2, 4))),
                         animation)

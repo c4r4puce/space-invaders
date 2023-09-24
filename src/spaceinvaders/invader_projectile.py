@@ -1,6 +1,7 @@
-from spaceinvaders.animation import Animation
-from spaceinvaders.projectile import Projectile
-from spaceinvaders.rocket import Rocket
+from spaceinvaders.animation      import Animation
+from spaceinvaders.projectile     import Projectile
+from spaceinvaders.rocket         import Rocket
+from spaceinvaders.vertical_speed import VerticalSpeed
 
 
 class InvaderProjectile(Projectile):
@@ -10,7 +11,7 @@ class InvaderProjectile(Projectile):
                               8, 8,                       # width, height
                               8, 112,                     # origx, origy
                               1)                          # count
-        super().__init__(1, invader.pos(), 3, animation)
+        super().__init__(1, invader.pos.copy(), VerticalSpeed(3.0), animation)
 
     def handle_collision(self):
         rocket = Rocket()

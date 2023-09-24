@@ -1,6 +1,7 @@
-from spaceinvaders.animation import Animation
-from spaceinvaders.projectile import Projectile
+from spaceinvaders.animation      import Animation
+from spaceinvaders.projectile     import Projectile
 from spaceinvaders.sprite_manager import SpriteManager
+from spaceinvaders.vertical_speed import VerticalSpeed
 
 
 class RocketProjectile(Projectile):
@@ -10,7 +11,11 @@ class RocketProjectile(Projectile):
                               8, 8,                       # width, height
                               0, 112,                     # origx, origy
                               1)                          # count
-        super().__init__(1, SpriteManager().get("Rocket")[0].pos(), -3, animation)
+        rocket = SpriteManager().get("Rocket")[0]
+        super().__init__(1,                               # depth
+                         rocket.pos.copy(),
+                         VerticalSpeed(-3.0),
+                         animation)
 
     def handle_collision(self):
         for invader in SpriteManager().get("Invader"):

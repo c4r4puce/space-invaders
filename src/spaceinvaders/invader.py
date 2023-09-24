@@ -3,12 +3,14 @@ from random import randrange
 
 import pyxel
 
-from spaceinvaders.animation import Animation, TOP_TO_BOTTOM
+from spaceinvaders.animation         import Animation, TOP_TO_BOTTOM
 from spaceinvaders.invader_explosion import InvaderExplosion
-from spaceinvaders.invader_weapon import InvaderWeapon
-from spaceinvaders.rocket import Rocket
-from spaceinvaders.sprite import Sprite
-from spaceinvaders.sprite_manager import SpriteManager
+from spaceinvaders.invader_weapon    import InvaderWeapon
+from spaceinvaders.rocket            import Rocket
+from spaceinvaders.sprite            import Sprite
+from spaceinvaders.sprite_manager    import SpriteManager
+from spaceinvaders.vector            import Vector
+from spaceinvaders.vertical_speed    import VerticalSpeed
 
 
 class Invader(Sprite):
@@ -22,11 +24,10 @@ class Invader(Sprite):
                               direction=TOP_TO_BOTTOM,
                               fps=6)
         hw = int(animation.width / 2)
-        pos = (randrange(hw, pyxel.width - hw), -animation.height)
         super().__init__(1,                                   # depth
-                        pos,
-                        1,                                   # speed
-                        animation)
+                         Vector(randrange(hw, pyxel.width - hw), -animation.height),
+                         VerticalSpeed(1.0),
+                         animation)
         self.weapon = InvaderWeapon(self)
 
     def destroy(self):

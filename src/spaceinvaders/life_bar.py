@@ -1,9 +1,11 @@
 
 import pyxel
 
-from spaceinvaders.animation import Animation
+from spaceinvaders.animation      import Animation
 from spaceinvaders.meta_singleton import MetaSingleton
-from spaceinvaders.sprite import Sprite
+from spaceinvaders.sprite         import Sprite
+from spaceinvaders.vector         import Vector
+from spaceinvaders.vertical_speed import VerticalSpeed
 
 
 class LifeBar(Sprite, metaclass=MetaSingleton):
@@ -14,11 +16,10 @@ class LifeBar(Sprite, metaclass=MetaSingleton):
                               40, 16,      # width, height
                               0, 0,        # origx, origy
                               1)           # count
-        pos = (2 + animation.width / 2, 2 + animation.height / 2)
-        super().__init__(3,               # depth
-                          pos,
-                          0,               # speed
-                          animation)
+        super().__init__(3,                # depth
+                         Vector(2 + animation.width / 2, 2 + animation.height / 2),
+                         VerticalSpeed(0.0),
+                         animation)
         self.hit_points = 18
 
     def draw(self):
