@@ -13,7 +13,7 @@ logger = logging.getLogger(LOGGER_NAME)
 class Root(metaclass=MetaSingleton):
 
     def __init__(self):
-        self.fps: int = 30
+        self.fps: int =  30
         self.mode = MenuMode()
 
         pyxel.init(160, 120, fps=self.fps)

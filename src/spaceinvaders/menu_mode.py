@@ -36,5 +36,5 @@ class MenuMode:
         pyxel.blt(0, 0,                     # (x, y) destination
                   2,                        # numero image source
                   0, self.menu_entry * 120, # (x, y) source
-                  160, 120,                 # (largeur, hauteur) source et destination
-                  0)                        # couleur transparente
+                  160, 120)                 # (largeur, hauteur) source et destination
+

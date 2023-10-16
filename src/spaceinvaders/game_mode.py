@@ -20,7 +20,7 @@ class GameMode:
 
         manager = SpriteManager()
         manager.spawn(Invader, 60)
-        manager.spawn(Star, 1)
+        manager.spawn(Star, 0.5)
         manager.attach(Rocket())
         manager.attach(LifeBar())
 

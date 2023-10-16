@@ -14,7 +14,7 @@ class Star(Sprite):
     def __init__(self):
         animation = Animation(1,                        # img
                               8, 8,                     # width, height
-                              randrange(0, 9) * 8, 16,  # origx, origy
+                              randrange(0, 7) * 8, 16,  # origx, origy
                               1,                        # count
                               direction=TOP_TO_BOTTOM,
                               fps=10)

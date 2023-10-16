@@ -61,6 +61,7 @@ class SpriteManager(metaclass=MetaSingleton):
 
     def spawn(self, cls, freq):
         """Tell the manager to spawn a new sprite with the CLS class every FREQ frames."""
+        #assert type(freq) is int, "Frequency must be an integer"
         if freq in self.frequencies:
             self.frequencies[freq].append(cls)
         else:
@@ -87,11 +88,19 @@ class SpriteManager(metaclass=MetaSingleton):
 
         # Auto-spawn sprites.
         for freq, classes in self.frequencies.items():
+            sprcount = 1
+            if freq < 1:
+                # 0.5   => Spawn 2 sprites
+                # 0.25  => Spawn 4 sprites
+                # 0.125 => Spawn 8 sprites
+                if freq == 0.5:
+                    sprcount = 2
             if pyxel.frame_count % freq != 0:
                 continue
             logger.debug(f"Will spawn: {classes}")
             for cls in classes:
-                self.attach( cls() )
+                for i in range(sprcount):
+                    self.attach( cls() )
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Sprite Plans:")
