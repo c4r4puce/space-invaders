@@ -47,7 +47,7 @@ class Sprite:
 
     def teleport(self, v):
         """Teleport the sprite along vector V."""
-        self.pos.add(v)
+        self.pos += v
         (self.x, self.y) = self.pos.to_tuple() # Retro compatibility
 
     def update(self):
