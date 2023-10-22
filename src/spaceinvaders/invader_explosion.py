@@ -1,7 +1,7 @@
 from random import randrange
 
 from spaceinvaders.animation import Animation
-from spaceinvaders.sprite import Sprite
+from spaceinvaders.sprite    import Sprite
 
 
 class InvaderExplosion(Sprite):
@@ -15,5 +15,5 @@ class InvaderExplosion(Sprite):
                               fps=3)
         super().__init__(1,                             # depth
                          invader.pos.copy(),
-                         invader.speed.copy(),
+                         invader.path.copy(),
                          animation)

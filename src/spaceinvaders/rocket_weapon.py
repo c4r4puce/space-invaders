@@ -1,4 +1,4 @@
-from spaceinvaders.sprite_manager import SpriteManager
+from spaceinvaders.sprite_manager    import SpriteManager
 from spaceinvaders.rocket_projectile import RocketProjectile
 
 

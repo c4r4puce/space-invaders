@@ -3,6 +3,7 @@ import pyxel
 
 from spaceinvaders.animation      import Animation
 from spaceinvaders.meta_singleton import MetaSingleton
+from spaceinvaders.path           import Path
 from spaceinvaders.sprite         import Sprite
 from spaceinvaders.vector         import Vector
 from spaceinvaders.vertical_speed import VerticalSpeed
@@ -18,7 +19,7 @@ class LifeBar(Sprite, metaclass=MetaSingleton):
                               1)           # count
         super().__init__(3,                # depth
                          Vector(2 + animation.width / 2, 2 + animation.height / 2),
-                         VerticalSpeed(0.0),
+                         Path([VerticalSpeed(0.0)], loop=True),
                          animation)
         self.reset()
 

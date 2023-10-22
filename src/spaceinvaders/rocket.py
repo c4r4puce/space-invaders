@@ -5,6 +5,7 @@ from spaceinvaders.animation         import Animation
 from spaceinvaders.invader_explosion import InvaderExplosion
 from spaceinvaders.life_bar          import LifeBar
 from spaceinvaders.meta_singleton    import MetaSingleton
+from spaceinvaders.path              import Path
 from spaceinvaders.rocket_weapon     import RocketWeapon
 from spaceinvaders.sprite            import Sprite
 from spaceinvaders.sprite_manager    import SpriteManager
@@ -29,7 +30,7 @@ class Rocket(Sprite, metaclass=MetaSingleton):
                                       4)         # count
         super().__init__(2,                                                 # depth
                          Vector((pyxel.width / 2) - 8, pyxel.height - 16),
-                         VerticalSpeed(0.0),
+                         Path([VerticalSpeed(0.0)], loop=True),
                          self.normal_speed)
         self.rocket_speed = 1.5
 

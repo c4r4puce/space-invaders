@@ -3,7 +3,7 @@ import logging
 
 import pyxel
 
-from spaceinvaders import LOGGER_NAME
+from spaceinvaders                import LOGGER_NAME
 from spaceinvaders.meta_singleton import MetaSingleton
 
 logger = logging.getLogger(LOGGER_NAME)

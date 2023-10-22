@@ -1,6 +1,7 @@
 
 import pyxel
 
+from spaceinvaders.path           import Path
 from spaceinvaders.sprite_manager import SpriteManager
 from spaceinvaders.vector         import Vector
 
@@ -18,15 +19,15 @@ class Sprite:
 
     """
 
-    def __init__(self, depth, pos: Vector, speed: Vector, animation):
-        assert isinstance(pos,   Vector), "pos must be a Vector"
-        assert isinstance(speed, Vector), "speed must be a Vector"
+    def __init__(self, depth, pos: Vector, path: Path, animation):
+        assert isinstance(pos,  Vector), "pos must be a Vector"
+        assert isinstance(path, Path),   "path must be a Path"
 
         self.animation = animation
         self.depth     = depth
         self.height    = animation.height
         self.img       = animation.img
-        self.speed     = speed
+        self.path      = path
         self.width     = animation.width
 
         self.pos         = pos
@@ -52,9 +53,9 @@ class Sprite:
 
     def update(self):
         """Update position"""
-        assert isinstance(self.speed, Vector), "self.speed must be a Vector"
+        assert isinstance(self.path, Path), "self.path must be a Path"
         self.update_frame()
-        self.teleport(self.speed)
+        self.teleport( self.path.next_move() )
 
     def draw(self):
         self.animation.draw_at(self.tlc())

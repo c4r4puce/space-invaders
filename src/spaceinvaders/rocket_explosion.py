@@ -16,5 +16,5 @@ class RocketExplosion(Sprite):
         Sprite.__init__(self,
                         1,                             # depth
                         Rocket().pos.copy(),
-                        Rocket().speed.copy(),
+                        Rocket().path.copy(),
                         animation)

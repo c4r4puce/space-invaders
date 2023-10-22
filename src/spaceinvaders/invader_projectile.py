@@ -1,4 +1,5 @@
 from spaceinvaders.animation      import Animation
+from spaceinvaders.path           import Path
 from spaceinvaders.projectile     import Projectile
 from spaceinvaders.rocket         import Rocket
 from spaceinvaders.vertical_speed import VerticalSpeed
@@ -10,8 +11,8 @@ class InvaderProjectile(Projectile):
         animation = Animation(0,                          # img
                               8, 8,                       # width, height
                               8, 112,                     # origx, origy
-                              1)                          # count
-        super().__init__(1, invader.pos.copy(), VerticalSpeed(3.0), animation)
+                              3)                          # count
+        super().__init__(1, invader.pos.copy(), Path([VerticalSpeed(3.0)], loop=True), animation)
 
     def handle_collision(self):
         rocket = Rocket()

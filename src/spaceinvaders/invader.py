@@ -6,6 +6,7 @@ import pyxel
 from spaceinvaders.animation         import Animation, TOP_TO_BOTTOM
 from spaceinvaders.invader_explosion import InvaderExplosion
 from spaceinvaders.invader_weapon    import InvaderWeapon
+from spaceinvaders.path              import Path
 from spaceinvaders.rocket            import Rocket
 from spaceinvaders.sprite            import Sprite
 from spaceinvaders.sprite_manager    import SpriteManager
@@ -26,7 +27,7 @@ class Invader(Sprite):
         hw = int(animation.width / 2)
         super().__init__(1,                                   # depth
                          Vector(randrange(hw, pyxel.width - hw), -animation.height),
-                         VerticalSpeed(1.0),
+                         Path([VerticalSpeed(1.0)], loop=True),
                          animation)
         self.weapon = InvaderWeapon(self)
 

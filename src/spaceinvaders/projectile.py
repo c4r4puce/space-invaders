@@ -3,10 +3,10 @@ from spaceinvaders.sprite import Sprite
 
 class Projectile(Sprite):
 
-    def __init__(self, depth, pos, speed, animation):
+    def __init__(self, depth, pos, path, animation):
         super().__init__(depth,
                         pos,
-                        speed,
+                        path,
                         animation)
 
     def handle_collision(self):
