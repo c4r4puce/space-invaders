@@ -24,7 +24,6 @@ class Sprite:
 
         self.animation = animation
         self.depth     = depth
-        self.destroyed = False
         self.height    = animation.height
         self.img       = animation.img
         self.speed     = speed
@@ -32,6 +31,11 @@ class Sprite:
 
         self.pos         = pos
         (self.x, self.y) = self.pos.to_tuple() # Retro compatibility
+
+        self.reset()
+
+    def reset(self):
+        self.destroyed = False
 
     def tlc(self):
         """Top left corner's coordinates."""

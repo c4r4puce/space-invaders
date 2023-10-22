@@ -18,11 +18,13 @@ class GameMode:
     def __init__(self):
         self.paused: bool = False
 
-        manager = SpriteManager()
+        manager = SpriteManager().reset()
         manager.spawn(Invader, 60)
-        manager.spawn(Star, 0.5)
+        manager.spawn(Star,    0.5)
         manager.attach(Rocket())
         manager.attach(LifeBar())
+
+        LifeBar().reset()
 
     def is_game_over(self):
         return LifeBar().is_dead()

@@ -31,12 +31,16 @@ class SpriteManager(metaclass=MetaSingleton):
     """
 
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.plans = [[], [], [], []]
 
         # Sprites sorted by class:
         self.classes = {}
 
         self.frequencies = {}
+        return self
 
     def attach(self, sprite):
         self.plans[sprite.depth].append(sprite)

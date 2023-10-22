@@ -20,6 +20,9 @@ class LifeBar(Sprite, metaclass=MetaSingleton):
                          Vector(2 + animation.width / 2, 2 + animation.height / 2),
                          VerticalSpeed(0.0),
                          animation)
+        self.reset()
+
+    def reset(self):
         self.hit_points = 18
 
     def draw(self):
