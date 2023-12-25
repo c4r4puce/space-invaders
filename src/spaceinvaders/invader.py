@@ -12,6 +12,7 @@ from spaceinvaders.sprite            import Sprite
 from spaceinvaders.sprite_manager    import SpriteManager
 from spaceinvaders.vector            import Vector
 from spaceinvaders.vertical_speed    import VerticalSpeed
+from spaceinvaders.horizontal_speed  import HorizontalSpeed
 
 
 class Invader(Sprite):
@@ -20,14 +21,21 @@ class Invader(Sprite):
     def __init__(self):
         animation = Animation(0,                          # img
                               16, 16,                     # width, height
-                              randrange(0, 6)*16, 128,    # origx, origy
+                              randrange(0, 3)*16, 128,    # origx, origy
                               8,                          # count
                               direction=TOP_TO_BOTTOM,
                               fps=6)
         hw = int(animation.width / 2)
+
+        v = VerticalSpeed(1.0)
+        r = HorizontalSpeed(1.0)
+        l = HorizontalSpeed(-1.0)
+        moves = 32*[v] + 128*[r] + 32*[v] + 128*[l]
+
         super().__init__(1,                                   # depth
-                         Vector(randrange(hw, pyxel.width - hw), -animation.height),
-                         Path([VerticalSpeed(1.0)], loop=True),
+                        #Vector(randrange(hw, pyxel.width - hw), -animation.height),
+                         Vector(16, -animation.height),
+                         Path(moves, loop=True),
                          animation)
         self.weapon = InvaderWeapon(self)
 

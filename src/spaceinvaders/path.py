@@ -19,7 +19,7 @@ class Path:
         return move
 
     def end(self):
-        return not self.loop and self.current >= len(self.moves)
+        return not self.loop and self.current == len(self.moves)
 
     def copy(self):
         moves = []

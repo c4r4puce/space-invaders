@@ -9,6 +9,7 @@ from spaceinvaders.life_bar       import LifeBar
 from spaceinvaders.rocket         import Rocket
 from spaceinvaders.sprite_manager import SpriteManager
 from spaceinvaders.star           import Star
+from spaceinvaders.ufo            import UFO
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -19,11 +20,11 @@ class GameMode:
         self.paused: bool = False
 
         manager = SpriteManager().reset()
-        manager.spawn(Invader, 60)
+        manager.spawn(Invader, 30)
         manager.spawn(Star,    0.5)
         manager.attach(Rocket())
         manager.attach(LifeBar())
-
+        manager.spawn(UFO, 240)
         LifeBar().reset()
 
     def is_game_over(self):
