@@ -11,7 +11,7 @@ class InvaderProjectile(Projectile):
         animation = Animation(0,                          # img
                               8, 8,                       # width, height
                               8, 112,                     # origx, origy
-                              3)                          # count
+                              5)                          # count
         super().__init__(1, invader.pos.copy(), Path([VerticalSpeed(3.0)], loop=True), animation)
 
     def handle_collision(self):
