@@ -14,9 +14,7 @@ class Sprite:
     The position (POS) of a sprite is the (x, y) coordinates of its center.
     While it's TLC is the (x, y) coordinates of its top left corner. TLC is used to draw of its animation.
 
-    Movement is described by its SPEED and is limited to vertical movements only.
-    A positive speed means the sprite is moving from top to bottom. A negative one means moving from bottom to top.
-
+    Movement is described by its PATH.
     """
 
     def __init__(self, depth, pos: Vector, path: Path, animation):
